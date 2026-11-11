@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Magyar nyelvű műszaki előadás az LLM-ek tanításáról, a Transformer attention mechanizmusáról és a generálásról.">
+<title>Hogyan működik egy LLM?</title>
+<style>:root {
+  color-scheme: light;
+  --ink: #182a3c;
+  --muted: #4d5b65;
+  --navy: #173b60;
+  --navy-deep: #152f4b;
+  --blue-paper: #e7eef4;
+  --paper: #fcfbf7;
+  --surround: #e9edf0;
+  --rule: #c4cdd2;
+  --teal: #12665e;
+  --teal-paper: #e3f1ed;
+  --amber: #f2e2b9;
+  --amber-ink: #65460a;
+  --sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "STIX Two Text", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--surround); font: 1rem/1.45 var(--sans); }
+button, input { font: inherit; }
+button { color: inherit; cursor: pointer; }
+button[disabled] { opacity: .45; cursor: default; }
+a { color: var(--navy); text-underline-offset: .17em; }
+:focus-visible { outline: 3px solid #a76b07; outline-offset: 4px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p, ul, ol, figure { margin: 0; }
+sub, sup { line-height: 0; }
+code { font-family: var(--mono); font-size: .9em; }
+.skip { position: fixed; top: .5rem; left: .5rem; z-index: 20; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; background: var(--paper); padding: .7rem; }
+.skip:focus { clip-path: none; width: auto; height: auto; overflow: visible; }
+
+.shell {
+  min-height: 58px;
+  border-bottom: 1px solid #ced7de;
+  background: var(--paper);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .85rem;
+  padding: .55rem clamp(1rem, 3vw, 3rem);
+}
+.brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.shell-actions, .nav-actions { display: flex; align-items: center; gap: .48rem; }
+.control {
+  padding: .4rem .75rem;
+  min-height: 38px;
+  border: 1px solid #aab8c4;
+  border-radius: 5px;
+  background: var(--paper);
+  font-weight: 580;
+  font-size: .89rem;
+  white-space: nowrap;
+}
+.control:hover:not([disabled]) { background: var(--blue-paper); }
+.control.primary { background: var(--navy); border-color: var(--navy); color: white; }
+.control.primary:hover:not([disabled]) { background: var(--navy-deep); }
+
+.stage {
+  width: min(calc(100% - 2.6rem), 89rem, calc((100dvh - 8.7rem) * 16 / 9));
+  margin: 1rem auto 0;
+  container-type: inline-size;
+}
+.enhanced .stage { aspect-ratio: 16 / 9; }
+.slide {
+  width: 100%;
+  min-height: 56.25cqw;
+  padding: 3.35cqw 4.5cqw 2.35cqw;
+  background: var(--paper);
+  border-top: .54cqw solid var(--navy);
+  border-left: 1px solid #d3dce1;
+  border-right: 1px solid #d3dce1;
+  border-bottom: 1px solid #d3dce1;
+  box-shadow: 0 6px 22px #1b344913;
+  display: flex;
+  flex-direction: column;
+  gap: 2.05cqw;
+  font-size: 1.73cqw;
+  line-height: 1.34;
+  overflow-wrap: break-word;
+}
+.enhanced .slide { height: 100%; overflow: auto; }
+.enhanced .slide:not(.active) { display: none; }
+.slide-title:focus { outline: none; }
+.slide-title:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+.eyebrow {
+  margin-bottom: .78cqw;
+  color: var(--teal);
+  font-size: 1.14cqw;
+  line-height: 1.15;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  font-weight: 760;
+}
+.slide h1, .slide h2 {
+  font: 600 4.15cqw/1.02 var(--serif);
+  letter-spacing: -.026em;
+}
+.slide h2.compact-title { font-size: 3.64cqw; }
+.lead { margin-top: .78cqw; max-width: 87cqw; font-size: 1.78cqw; line-height: 1.31; color: var(--muted); }
+.slide-body { display: grid; gap: 1.45cqw; align-content: start; }
+.slide-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--rule);
+  padding-top: .72cqw;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.2cqw;
+  font-size: 1.02cqw;
+  line-height: 1.23;
+  color: var(--muted);
+}
+.slide-footer > span:last-child { flex-shrink: 0; }
+.speaker-notes { display: none; }
+html:not(.enhanced) .speaker-notes { display: block; }
+html:not(.enhanced) .script-only, html:not(.enhanced) .nav { display: none; }
+html:not(.enhanced) .stage { width: min(calc(100% - 2rem), 90rem); }
+html:not(.enhanced) .slide { margin-bottom: 1rem; }
+.label { font-size: 1.16cqw; font-weight: 750; color: var(--teal); text-transform: uppercase; letter-spacing: .07em; }
+.small { font-size: 1.43cqw; line-height: 1.3; }
+.muted { color: var(--muted); }
+.accent-text { color: var(--teal); }
+.no-break { white-space: nowrap; }
+.prose-stack > * + * { margin-top: .8cqw; }
+.list { padding-left: 1.23em; }
+.list li + li { margin-top: .38em; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.6cqw; align-items: start; }
+.cols.wide-left { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.cols.wide-right { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.cols.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols.stretch { align-items: stretch; }
+.card { border: 1px solid var(--rule); background: #fffefa; padding: 1.48cqw 1.65cqw; min-width: 0; border-radius: 4px; }
+.card.tint { background: var(--blue-paper); border-color: #b9c9d8; }
+.card.signal { background: var(--teal-paper); border-color: #a9cac4; }
+.card.result { background: #f8edce; border-color: #d7bf83; }
+.card.dark { background: var(--navy-deep); border-color: var(--navy-deep); color: white; }
+.card.dark .label { color: #a6e1d7; }
+.card h3, .subhead { font: 650 2.15cqw/1.11 var(--serif); letter-spacing: -.01em; }
+.card h3 + *, .card .label + * { margin-top: .65cqw; }
+.card p + p { margin-top: .65cqw; }
+.callout { border-left: .34cqw solid var(--teal); background: var(--teal-paper); padding: .88cqw 1.15cqw; border-radius: 0 4px 4px 0; }
+.callout.gold { border-color: #a67922; background: #f8edce; }
+.formula {
+  background: var(--blue-paper);
+  border: 1px solid #c3d1dc;
+  border-radius: 4px;
+  padding: .85cqw 1.15cqw;
+  font: 500 2.07cqw/1.25 var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.formula.large { font-size: 2.8cqw; }
+.formula .comment { display: block; color: var(--muted); font: 1.28cqw/1.28 var(--sans); margin-top: .24cqw; }
+.formula + .formula { margin-top: .66cqw; }
+.nums { font-variant-numeric: tabular-nums; }
+.metric { color: var(--navy-deep); font: 650 3.35cqw/1.04 var(--serif); letter-spacing: -.025em; }
+.token { display: inline-block; padding: .12em .34em; border-radius: 4px; border: 1px solid #bbcad6; background: var(--blue-paper); color: var(--navy-deep); font: .9em/1.25 var(--mono); white-space: nowrap; }
+.token.target { background: var(--amber); border-color: #cfb271; color: #45310a; }
+.token.stop { background: var(--teal-paper); border-color: #abd0c5; color: #164842; }
+.token-lane { display: flex; flex-wrap: wrap; align-items: center; gap: .45em; }
+.arrow { color: var(--teal); font: 650 1.32em/1 var(--sans); }
+.flow { display: flex; align-items: stretch; gap: .65cqw; }
+.flow > .arrow { align-self: center; flex: 0 0 auto; }
+.flow-step { flex: 1 1 0; min-width: 0; padding: 1.12cqw 1.12cqw; background: var(--blue-paper); border: 1px solid #bbcbd8; border-radius: 4px; }
+.flow-step:last-child { background: var(--teal-paper); border-color: #adc9c2; }
+.flow-step > strong { display: block; font: 650 1.9cqw/1.15 var(--serif); }
+.flow-step > span { display: block; font-size: 1.35cqw; line-height: 1.3; margin-top: .32cqw; }
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 1.55cqw; font-variant-numeric: tabular-nums; text-align: left; }
+.data-table th, .data-table td { padding: .62cqw .83cqw; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.data-table thead th { background: var(--navy); color: #fff; font-size: 1.32cqw; line-height: 1.22; font-weight: 650; }
+.data-table tbody tr:nth-child(2n) { background: #edf1f3; }
+.data-table tbody tr.highlight { background: #f8eac6; font-weight: 630; }
+.data-table .center { text-align: center; }
+.data-table .allow { background: var(--teal-paper); color: #11453d; }
+.data-table .mask { background: #e8eaec; color: #555e63; }
+.data-table .rowhead { font-weight: 650; }
+.seq-matrix { font-size: 1.55cqw; }
+.seq-matrix th, .seq-matrix td { padding: .57cqw .63cqw; }
+.steps { display: grid; gap: .7cqw; }
+.calc-step { border-bottom: 1px solid var(--rule); padding: .24cqw 0 .65cqw; }
+.calc-step .label { color: var(--muted); }
+.calc-step .mathline { margin-top: .24cqw; font: 600 2.05cqw/1.2 var(--serif); }
+.calc-step:last-child { border-bottom: 0; }
+.caption { margin-top: .52cqw; color: var(--muted); font-size: 1.25cqw; line-height: 1.28; }
+.branch { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.1cqw; align-items: center; }
+.translator { display: grid; grid-template-columns: minmax(0, 1fr) 9cqw minmax(0, 1fr); gap: 1.4cqw; align-items: stretch; }
+.translator-bridge { align-self: center; text-align: center; color: var(--teal); }
+.translator-bridge .arrow { display: block; font-size: 2.6cqw; }
+.translator .token-lane { margin: .7cqw 0; }
+.distance { display: grid; gap: .75cqw; }
+.distance-sentence { display: grid; grid-template-columns: max-content max-content max-content; gap: .2em .24em; justify-self: start; font: 600 2.26cqw/1.26 var(--serif); }
+.link-line { grid-column: 1 / -1; height: 1.3cqw; margin: 0 3.1em 0 3.15em; border: .18cqw solid var(--teal); border-top: 0; border-radius: 0 0 10px 10px; position: relative; }
+.link-line::after { content: ""; position: absolute; right: -.42cqw; top: -.1cqw; width: .62cqw; height: .62cqw; border-right: .17cqw solid var(--teal); border-top: .17cqw solid var(--teal); transform: rotate(-45deg); }
+mark { background: var(--amber); color: var(--ink); padding: 0 .15em; border-radius: 2px; }
+.token-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .66cqw; }
+.token-grid .card { padding: .95cqw; }
+.token-grid .token { margin-top: .33cqw; }
+
+.cover { border-color: var(--navy-deep); background: var(--navy-deep); color: #fcfbf7; padding-top: 4.3cqw; }
+.cover .eyebrow, .cover .label { color: #a9ddd6; }
+.cover .slide-body { flex: 1; }
+.cover h1 { font-size: 6.3cqw; line-height: .99; max-width: 60cqw; }
+.cover .slide-header { margin-bottom: .35cqw; }
+.cover .lead { color: #dbe6ec; max-width: 67cqw; font-size: 2.05cqw; }
+.cover-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 2.6cqw; align-items: center; }
+.cover-path { display: grid; grid-template-columns: 1fr 1fr; gap: .7cqw 1.2cqw; font-size: 1.44cqw; }
+.cover-path a { color: white; text-decoration: none; border-top: 1px solid #7290a8; padding-top: .48cqw; }
+.cover-path a:hover { text-decoration: underline; }
+.cover-path a span { color: #9ed8d1; margin-right: .35em; }
+.cover-figure { background: #f2f5f5; color: var(--ink); border-radius: 4px; padding: 1.4cqw; border-left: .5cqw solid #67b3a7; }
+.cover-figure .label { color: var(--teal); }
+.cover-figure .token-lane { margin: .6cqw 0; font-size: 1.82cqw; }
+.cover .slide-footer { color: #dbe6ec; border-color: #7290a8; }
+
+.nav {
+  width: min(calc(100% - 2.6rem), 89rem, calc((100dvh - 8.7rem) * 16 / 9));
+  margin: .65rem auto .55rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .8rem;
+}
+.progress { height: 5px; border-radius: 9px; background: #cbd6df; overflow: hidden; }
+.progress > div { height: 100%; background: var(--teal); }
+.counter { color: var(--muted); font-variant-numeric: tabular-nums; font-size: .9rem; white-space: nowrap; }
+.keyboard-help { font-size: .76rem; color: var(--muted); text-align: center; margin: 0 0 .4rem; }
+.dialog { border: 1px solid var(--rule); border-radius: 8px; padding: 0; color: var(--ink); background: var(--paper); width: min(94vw, 50rem); max-height: 82dvh; box-shadow: 0 22px 65px #152f4b48; }
+.dialog::backdrop { background: #162b40a6; }
+.dialog-head { position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 1rem 1.3rem; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.dialog-head h2 { font: 650 1.7rem/1.05 var(--serif); }
+.dialog-body { padding: 1.1rem 1.3rem 1.4rem; }
+.dialog-body p + p, .dialog-body ul + p { margin-top: .75rem; }
+.toc-section + .toc-section { margin-top: 1rem; }
+.toc-section h3 { font: 650 1.23rem/1.2 var(--serif); color: var(--teal); margin-bottom: .3rem; }
+.toc-section ol { list-style: none; padding: 0; }
+.toc-section a { display: grid; grid-template-columns: 2.1rem 1fr; align-items: baseline; gap: .4rem; padding: .37rem .45rem; border-radius: 3px; text-decoration: none; }
+.toc-section a:hover, .toc-section a[aria-current] { background: var(--blue-paper); }
+.toc-section a > span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+
+.lab { display: grid; gap: .85cqw; }
+.lab fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.lab legend { margin-bottom: .4cqw; font-size: 1.32cqw; font-weight: 650; }
+.choices { display: flex; flex-wrap: wrap; gap: .44cqw; }
+.choice, .lab-button { border: 1px solid #9faeba; border-radius: 4px; background: var(--paper); padding: .4cqw .72cqw; font-size: 1.32cqw; line-height: 1.23; min-height: 31px; }
+.choice[aria-pressed="true"], .lab-button.action { background: var(--navy); border-color: var(--navy); color: white; }
+.choice:hover:not([aria-pressed="true"]), .lab-button:hover:not(.action) { background: var(--blue-paper); }
+.lab-button.action:hover:not([disabled]) { background: var(--navy-deep); }
+.choice-group { display: flex; flex-wrap: wrap; gap: 1cqw 1.5cqw; align-items: end; }
+.range-control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .23cqw .6cqw; font-size: 1.36cqw; }
+.range-control input { grid-column: 1 / -1; width: 100%; accent-color: var(--teal); min-height: 25px; margin: 0; }
+.result-line { padding: .58cqw .75cqw; background: var(--teal-paper); border-radius: 4px; font-variant-numeric: tabular-nums; }
+.bars { display: grid; gap: .44cqw; font-variant-numeric: tabular-nums; }
+.bar-row { display: grid; grid-template-columns: 8cqw minmax(0, 1fr) 5.4cqw; align-items: center; gap: .62cqw; font-size: 1.4cqw; }
+.bar-row .token { justify-self: start; }
+.track { height: 1.12cqw; background: #dce4e8; border-radius: 2px; overflow: hidden; }
+.bar { height: 100%; background: var(--teal); min-width: 0; }
+.bar-row.leading .bar { background: var(--navy); }
+.bar-value { text-align: right; font-size: 1.35cqw; }
+.reveal { border: 1px solid #abc7c2; border-radius: 4px; background: var(--teal-paper); padding: .78cqw 1.05cqw; }
+.reveal summary { color: #194e47; font-weight: 650; cursor: pointer; }
+.reveal > :not(summary) { margin-top: .67cqw; }
+.reveal .formula { background: #f7fbfa; }
+.sources { display: grid; gap: .52cqw; }
+.source-row { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.5fr); gap: 1.35cqw; border-bottom: 1px solid var(--rule); padding-bottom: .5cqw; font-size: 1.43cqw; }
+.source-row a { font-weight: 620; }
+.vector-plot { position: relative; height: 13.3cqw; background: #f8fbfc; border: 1px solid var(--rule); border-radius: 4px; font-size: 1.32cqw; }
+.vector-plot span { position: absolute; }
+.axis-x { left: 11%; right: 10%; bottom: 22%; border-top: 1px solid #8396a3; }
+.axis-y { left: 11%; top: 13%; bottom: 22%; border-left: 1px solid #8396a3; }
+.plot-x { left: 11%; width: 44%; bottom: 22%; border-top: 3px solid var(--navy); }
+.plot-y { left: 55%; height: 43%; bottom: 22%; border-left: 3px solid var(--teal); }
+.plot-point { left: 55%; bottom: 65%; width: .75em; height: .75em; transform: translate(-50%,50%); border-radius: 50%; background: var(--teal); }
+.plot-origin { left: 6%; bottom: 6%; }
+.plot-x-label { left: 29%; bottom: 5%; color: var(--navy); }
+.plot-y-label { left: 59%; bottom: 38%; color: var(--teal); }
+.plot-total { left: 55%; bottom: 70%; font-weight: 650; }
+.code-box { font: 1.15cqw/1.37 var(--mono); white-space: pre; color: #ecf5fa; background: var(--navy-deep); border: 1px solid #344d63; border-radius: 5px; padding: .85cqw 1.05cqw; margin: 0; max-height: 20.8cqw; overflow: auto; tab-size: 4; }
+.code-box code { font-size: 1em; }
+
+:fullscreen body { background: var(--surround); }
+@media (max-width: 720px), (max-aspect-ratio: 1/1) {
+  .shell { flex-wrap: wrap; gap: .35rem; padding: .55rem .75rem; }
+  .brand { font-size: 1.15rem; }
+  .shell .control { font-size: .8rem; padding-inline: .48rem; min-height: 36px; }
+  #fullscreen, .keyboard-help { display: none; }
+  .stage, .nav { width: calc(100% - 1.05rem); }
+  .enhanced .stage { aspect-ratio: auto; }
+  .enhanced .slide { height: auto; overflow: visible; }
+  .slide { min-height: 66dvh; padding: 1.15rem .95rem; border-top-width: 5px; gap: .95rem; font-size: 1rem; }
+  .eyebrow, .label { font-size: .72rem; margin-bottom: .35rem; }
+  .slide h1, .slide h2, .slide h2.compact-title { font-size: clamp(1.95rem, 6.9vw, 3rem); line-height: 1.02; }
+  .cover h1 { font-size: clamp(2.6rem, 9vw, 4.15rem); max-width: none; }
+  .lead, .cover .lead { margin-top: .45rem; font-size: 1rem; max-width: none; }
+  .slide-body, .lab { gap: .8rem; }
+  .slide-footer { font-size: .7rem; padding-top: .42rem; gap: .35rem; }
+  .small, .caption { font-size: .88rem; }
+  .card { padding: .75rem .8rem; }
+  .card h3, .subhead { font-size: 1.3rem; }
+  .metric { font-size: 1.9rem; }
+  .card h3 + *, .card .label + *, .card p + p, .prose-stack > * + * { margin-top: .42rem; }
+  .callout, .formula, .reveal { padding: .6rem .7rem; }
+  .formula, .formula.large { font-size: 1.18rem; }
+  .formula .comment { font-size: .8rem; }
+  .cols, .cols.wide-left, .cols.wide-right, .cols.three, .cover-grid { grid-template-columns: 1fr; gap: .72rem; }
+  .cover-path { font-size: .9rem; gap: .4rem .62rem; }
+  .cover-path a { padding-top: .32rem; }
+  .cover-figure { padding: .75rem; }
+  .cover-figure .token-lane { margin: .42rem 0; font-size: 1rem; }
+  .flow { flex-wrap: wrap; gap: .34rem; }
+  .flow-step { flex: 1 1 40%; padding: .58rem; }
+  .flow-step > strong { font-size: 1.08rem; }
+  .flow-step > span { font-size: .81rem; }
+  .flow > .arrow { font-size: .9rem; }
+  .data-table { font-size: .88rem; }
+  .data-table thead th { font-size: .82rem; }
+  .data-table td, .data-table th { padding: .4rem .45rem; }
+  .calc-step { padding: .25rem 0 .4rem; }
+  .calc-step .mathline { font-size: 1.13rem; }
+  .translator { grid-template-columns: 1fr; gap: .55rem; }
+  .translator-bridge .arrow { display: inline-block; margin-left: .3rem; font-size: 1.1rem; transform: rotate(90deg); }
+  .distance-sentence { display: block; font-size: 1.22rem; }
+  .link-line { display: none; }
+  .token-grid { gap: .45rem; }
+  .token-grid .card { padding: .4rem; }
+  .token-grid .token { font-size: .75rem; }
+  .lab legend, .choice, .lab-button, .range-control, .bar-row, .bar-value { font-size: .88rem; }
+  .lab legend { margin-bottom: .3rem; }
+  .choices, .choice-group { gap: .35rem; }
+  .choice, .lab-button { padding: .35rem .5rem; }
+  .track { height: .52rem; }
+  .bar-row { grid-template-columns: 5.5rem 1fr 3.8rem; gap: .45rem; }
+  .result-line { padding: .42rem .6rem; }
+  .source-row { grid-template-columns: 1fr; font-size: .9rem; gap: .16rem; padding-bottom: .45rem; }
+  .vector-plot { height: 8.5rem; font-size: .87rem; }
+  .code-box { font-size: .72rem; padding: .6rem; max-height: 18rem; }
+  .nav { position: sticky; bottom: 0; background: var(--surround); padding: .42rem 0; margin-top: .35rem; }
+}
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { background: white; }
+  .shell, .nav, .keyboard-help, .dialog, .skip, .script-only { display: none !important; }
+  .stage, .enhanced .stage { width: 277mm; margin: 10mm; aspect-ratio: auto; }
+  .slide, .enhanced .slide, .enhanced .slide:not(.active) {
+    display: flex;
+    min-height: 0;
+    height: 155.8mm;
+    break-after: page;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+    margin: 0;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .slide:last-child { break-after: auto; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#szinpad">Ugrás az aktuális diához</a>
+<header class="shell">
+  <a class="brand" href="#kezdes">Hogyan működik egy LLM?</a>
+  <div class="shell-actions script-only">
+    <button class="control" id="open-toc" type="button">Tartalom</button>
+    <button class="control" id="open-notes" type="button">Előadói jegyzet</button>
+    <button class="control" id="fullscreen" type="button" aria-pressed="false">Teljes képernyő</button>
+  </div>
+</header>
+<main class="stage" id="szinpad" tabindex="-1" aria-label="Prezentáció">
+
+<section class="slide cover" id="kezdes" aria-labelledby="kezdes-title">
+  <header class="slide-header">
+    <p class="eyebrow">Egyetemi előadás · Műszaki alapok</p>
+    <h1 class="slide-title" id="kezdes-title" tabindex="-1">Hogyan működik<br> egy LLM?</h1>
+    <p class="lead">A Transformer felépítése, az attention, a tanítás és a generálás egy végigszámolt mini-GPT-n.</p>
+  </header>
+  <div class="slide-body"><div class="cover-grid">
+      <div class="cover-path" aria-label="Fejezetek"><a href="#token-elso"><span>01</span>Szöveg és tokenek</a><a href="#eredeti-transformer"><span>02</span>Transformer és attention</a><a href="#mini-gpt"><span>03</span>Mini-GPT számolás</a><a href="#adatok"><span>04</span>Tanítás és utótanítás</a><a href="#generalas"><span>05</span>Generálás és futtatás</a><a href="#feladat-attention"><span>06</span>Gyakorlás és források</a></div>
+      <figure class="cover-figure">
+        <p class="label">A végigvezetett példa</p>
+        <div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="arrow" aria-hidden="true">→</span><span class="token target">␣ül</span></div>
+        <p class="small">Két bemeneti tokenből kiszámoljuk, miért kapja az „ül” a legnagyobb valószínűséget.</p>
+      </figure>
+    </div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az előadás a szöveges, autoregresszív GPT-típusú modelleket tárgyalja. A Transformer többféle felépítését bemutatjuk, majd a dekóderes modellt követjük végig. A minipélda számai kézzel ellenőrizhetők.</p><p>A tartalomjegyzékből fejezetre és konkrét diára is ugorhatsz. Az előadói jegyzet minden dián kibontja a fő gondolatot. A gyakorlófeladatok megoldása a feladat alatti nyitható részben van.</p></aside>
+  <footer class="slide-footer"><span></span><span>01 / 47</span></footer>
+</section>
+
+<section class="slide" id="celok" aria-labelledby="celok-title">
+  <header class="slide-header">
+    <p class="eyebrow">Az előadás menete</p>
+    <h2 class="slide-title" id="celok-title" tabindex="-1">Mit tudsz a végére kiszámolni?</h2>
+    <p class="lead">Három kérdés köré szerveződik az előadás. Ugyanarra a két tokenre mindháromnál visszatérünk.</p>
+  </header>
+  <div class="slide-body"><div class="cols three stretch"><section class="card tint"><h3>Mire figyel a modell?</h3><p>Olvasd le az oksági maszkot. Számold ki a Q/K pontszámokat és a V vektorok súlyozott összegét.</p></section><section class="card signal"><h3>Mitől tanul?</h3><p>Számold ki a következő token veszteségét, és kövesd egy súly gradiensét a frissítésig.</p></section><section class="card result"><h3>Hogyan ír tovább?</h3><p>Számolj logitból valószínűséget. Kövesd a kiválasztást, a token hozzáfűzését és a KV-cache használatát.</p></section></div><div class="callout ">Elég az összeadás, a szorzás, a vektorok és a valószínűség alapötlete. A szükséges logaritmust és softmaxot a példákban vezetjük be.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az első rész a szöveg reprezentációját adja meg. Utána a Transformer belsejét nézzük meg. A tanítás és a futtatás ugyanannak a modellnek két különböző használata, ezért a példában közös súlyokat és jelöléseket használunk.</p></aside>
+  <footer class="slide-footer"><span></span><span>02 / 47</span></footer>
+</section>
+
+<section class="slide" id="token-elso" aria-labelledby="token-elso-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / Szöveg és tokenek</p>
+    <h2 class="slide-title" id="token-elso-title" tabindex="-1">A modell a következő token eloszlását adja</h2>
+    <p class="lead">Egy autoregresszív nyelvi modell az eddigi sorozathoz a szótár összes tokenjét pontozza.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Bemenet és eloszlás</h3><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="arrow" aria-hidden="true">→</span><span class="token target">␣ül</span></div><div class="formula">p<sub>θ</sub>(t<sub>i+1</sub> | t<sub>1</sub>, …, t<sub>i</sub>)<span class="comment">θ jelöli a tanult súlyokat. A feltétel az addigi tokensor.</span></div><p class="small">Az „ül” a példa egyik jelöltje. A többi szótári token is kap valószínűséget.</p></section><section class="card signal"><h3>A folytatás egymásra épül</h3><p>Az első választás hozzákerül a bemenethez. A következő döntés már a bővített előzményre épül.</p><div class="formula">p(ül, EOS | A, macska)<br>= p(ül | A, macska) × p(EOS | A, macska, ül)</div><p class="small">Az EOS a szekvencia végét jelölő külön token.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A feltételes valószínűségek szorzata a láncszabály. Egy hosszabb választ ezért egymást követő lokális predikciókkal írhatunk le. Tanításkor ennek negatív logaritmusát használjuk, ami szorzás helyett összeadást ad.</p><p>Ezen az előadáson a „modell” jellemzően a GPT-típusú dekóderes nyelvi modellt jelenti. BERT-nél például más a bemeneten elérhető kontextus és a tanítási cél.</p></aside>
+  <footer class="slide-footer"><span><a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a></span><span>03 / 47</span></footer>
+</section>
+
+<section class="slide" id="tokenizer" aria-labelledby="tokenizer-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / Szöveg és tokenek</p>
+    <h2 class="slide-title" id="tokenizer-title" tabindex="-1">A tokenizer karakterekből token-ID-ket készít</h2>
+    <p class="lead">A token a modell szótárának egy eleme. Lehet szórész, szóközzel kezdődő darab, írásjel vagy speciális jel.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><section class="card tint"><h3>A mintaszótár</h3><div class="table-wrap"><table class="data-table " aria-label="Az öttokenes mintaszótár"><thead><tr><th scope="col">ID</th><th scope="col">Token</th><th scope="col">Visszaalakítva</th></tr></thead><tbody><tr><td>0</td><td><span class="token ">A</span></td><td>A</td></tr><tr><td>1</td><td><span class="token ">␣macska</span></td><td>szóköz + macska</td></tr><tr><td>2</td><td><span class="token ">␣ül</span></td><td>szóköz + ül</td></tr><tr><td>3</td><td><span class="token ">␣alszik</span></td><td>szóköz + alszik</td></tr><tr><td>4</td><td><span class="token ">EOS</span></td><td>szekvenciavége</td></tr></tbody></table></div></section><section class="card signal"><h3>A szöveg oda-vissza</h3><p class="label">Szöveg</p><p>„A macska ül”</p><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="token ">␣ül</span><span class="token stop">EOS</span></div><div class="formula">[0, 1, 2, 4]</div><p class="small">A ␣ jel a szóközt teszi láthatóvá. Dekódoláskor a darabok egymás mellé kerülnek, az EOS a megállást jelzi.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Egy tényleges tokenizer saját szótárat és darabolási szabályt használ. A magyar ragok vagy ritka karakterek több tokenre eshetnek. A szóköz a tokenizer szabályaitól függően része lehet a következő darabnak.</p><p>A példa teljes szótára öt elem. Az EOS-t az adat előkészítése vagy a felület adja hozzá, ezért a szövegben nem jelenik meg betűs szóként.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/learn/llm-course/chapter6/5" target="_blank" rel="noopener">Hugging Face · Byte-Pair Encoding</a></span><span>04 / 47</span></footer>
+</section>
+
+<section class="slide" id="bpe" aria-labelledby="bpe-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / Szöveg és tokenek</p>
+    <h2 class="slide-title" id="bpe-title" tabindex="-1">A BPE gyakori szomszédokat von össze</h2>
+    <p class="lead">Egy egyszerűsített szótártanítás egyetlen összevonási lépése.</p>
+  </header>
+  <div class="slide-body"><div class="cols "><section class="card "><h3>Kiinduló minták</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">Minta</th><th scope="col">Darabok</th><th scope="col">Darabszám</th></tr></thead><tbody><tr><td>alma</td><td>a · l · m · a</td><td>3</td></tr><tr><td>al</td><td>a · l</td><td>2</td></tr><tr><td>él</td><td>é · l</td><td>1</td></tr></tbody></table></div><p class="small">Számoljuk meg a szomszédos darabpárokat, a minta gyakoriságával súlyozva.</p></section><section class="card signal"><h3>Első összevonás</h3><div class="table-wrap"><table class="data-table " aria-label="Párok gyakorisága az első BPE-lépésben"><thead><tr><th scope="col">Szomszédos pár</th><th scope="col">Gyakoriság</th></tr></thead><tbody><tr class="highlight"><td>a + l</td><td>3 + 2 = 5</td></tr><tr><td>l + m</td><td>3</td></tr><tr><td>m + a</td><td>3</td></tr><tr><td>é + l</td><td>1</td></tr></tbody></table></div><div class="formula">a + l → al<span class="comment">Az „alma” felbontása ezután al · m · a.</span></div></section></div><div class="callout ">A tokenizer a megengedett szótárméretig ismételheti az összevonást. A GPT-2 byte-level BPE-je bájtokból indul.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A hat mintában az a·l pár az „alma” három előfordulásában és az „al” két előfordulásában szerepel. Az összevonás után a szomszédságok megváltoznak, ezért a következő körben újra számolni kell. A példában a szóhatárokon belül számolunk. A valódi byte-level BPE pretokenizálása ennél összetettebb.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/learn/llm-course/chapter6/5" target="_blank" rel="noopener">Hugging Face · Byte-Pair Encoding</a> &nbsp;·&nbsp; <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a></span><span>05 / 47</span></footer>
+</section>
+
+<section class="slide" id="embedding" aria-labelledby="embedding-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / Szöveg és tokenek</p>
+    <h2 class="slide-title" id="embedding-title" tabindex="-1">Az ID-ból vektor lesz, a sorrend pedig információ</h2>
+    <p class="lead">Az embeddingtábla minden tokenhez egy tanulható vektort tárol. A pozíció kezelése adja meg a sorban elfoglalt helyet.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Egy kezdeti reprezentáció</h3><div class="formula">x<sub>i</sub> = E[t<sub>i</sub>] + P<sub>i</sub><span class="comment">Abszolút pozícióvektoros példa.</span></div><p class="small"><b>E[t<sub>i</sub>]</b> a tokenhez tartozó sor. <b>P<sub>i</sub></b> az i. pozíció vektora. Mindkettő d komponensű.</p></section><section class="card signal"><h3>Két gyakori megoldás</h3><ul class="list"><li><b>Tanult abszolút pozíció.</b> A GPT-2 a tokenembeddinghez pozícióvektort ad.</li><li><b>RoPE.</b> A Q és K vektor komponenspárjait pozíciófüggően forgatja, így az illeszkedés a relatív helytől is függ.</li></ul></section></div><div class="callout ">A „kutya kergeti a macskát” sorrendje eltér a „macska kergeti a kutyát” sorrendjétől. A sorrendet a modell reprezentációjában is kezelni kell.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az eredeti Transformer szinuszokból és koszinuszokból képezett pozíciójeleket mutat be. A GPT-2 tanult abszolút pozícióembeddingeket használt. A minipélda az összeadást választja, mert két számpárral követhető.</p><p>A RoPE forgatási szöge pozíciónként változik. Ha ugyanazt a komponenspárt két pozícióban forgatjuk el, a pontszorzatban a két forgatás szögkülönbsége jelenik meg.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener">Su és mtsai. · RoFormer</a></span><span>06 / 47</span></footer>
+</section>
+
+<section class="slide" id="eredeti-transformer" aria-labelledby="eredeti-transformer-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="eredeti-transformer-title" tabindex="-1">Az eredeti Transformer egy fordítómodell volt</h2>
+    <p class="lead">A 2017-es architektúra egy enkóderből és egy dekóderből áll. A dekóder a forrásból és az eddigi fordításból dolgozik.</p>
+  </header>
+  <div class="slide-body"><figure class="translator" aria-label="A fordítás adatfolyama">
+      <section class="card tint"><h3>Enkóder</h3><p class="label">Forrásmondat</p><div class="token-lane"><span class="token ">The</span><span class="token ">cat</span><span class="token ">sits</span></div><p>Önfigyelemmel (self-attention) egymáshoz kapcsolja a forrás összes elérhető pozícióját.</p></section>
+      <div class="translator-bridge"><span class="small">Cross-attention</span><span class="arrow" aria-hidden="true">→</span></div>
+      <section class="card signal"><h3>Dekóder</h3><p class="label">Eddigi fordítás</p><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="arrow" aria-hidden="true">→</span><span class="token target">␣ül</span></div><p>Oksági önfigyelemmel olvassa a célelőzményt. Cross-attentionnel az enkóder kimenetéhez fér hozzá.</p></section>
+    </figure><div class="callout ">Cross-attention esetén a query a dekóderből jön, a key és value az enkóder kimenetéből.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az eredeti enkóder önfigyelmében a forrástokenek jobbra és balra is láthatják egymást, a padding természetesen maszkolható. A dekóder a célnyelvi sorban csak a saját és korábbi pozíciókat látja.</p><p>Az enkóder kimenete elérhető az összes dekóderpozíciónak cross-attentionnel. A képen a „The cat sits” és „A macska ül” tanítási célú fordításpár.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a></span><span>07 / 47</span></footer>
+</section>
+
+<section class="slide" id="architekturak" aria-labelledby="architekturak-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="architekturak-title" tabindex="-1">A Transformer felépítését a feladathoz választjuk</h2>
+    <p class="lead">A látható kontextus és a tanítási cél együtt határozza meg, mire használható egy modell.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table " aria-label="Transformer-architektúrák"><thead><tr><th scope="col">Felépítés</th><th scope="col">A pozíciók kapcsolata</th><th scope="col">Példa és cél</th></tr></thead><tbody><tr><td>Enkóder</td><td>Kétirányú önfigyelem a bemeneten</td><td><b>BERT</b> · maszkolt token helyreállítása</td></tr><tr><td>Enkóder + dekóder</td><td>Forráskódolás, oksági célsor és cross-attention</td><td><b>Eredeti Transformer</b> · fordítás a forrás feltételével</td></tr><tr class="highlight"><td>Dekóderes (decoder-only)</td><td>Oksági önfigyelem egyetlen tokensoron</td><td><b>GPT</b> · következő token az eddigi szövegből</td></tr></tbody></table></div><div class="callout ">A GPT egy tokensorba teszi az utasítást, az előzményt és a már generált választ. Ezeket a modell ugyanolyan vektoros adatfolyamban dolgozza fel.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az enkóderes, enkóder–dekóderes és dekóderes kifejezés felépítést jelöl. A bemutatott tanítási cél egy ismert modellpélda, és más célok is használhatók az adott architektúrával.</p><p>A GPT-típusú dekóderveremben oksági önfigyelem van. Az eredeti fordítódekódernek emellett az enkóderhez csatlakozó cross-attention ága is volt.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/learn/llm-course/chapter1/4" target="_blank" rel="noopener">Hugging Face · How do Transformers work?</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">Devlin és mtsai. · BERT</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a></span><span>08 / 47</span></footer>
+</section>
+
+<section class="slide" id="gpt-adatfolyam" aria-labelledby="gpt-adatfolyam-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="gpt-adatfolyam-title" tabindex="-1">A GPT adatfolyama a tokentől a logitig</h2>
+    <p class="lead">A rétegek minden pozícióhoz egy d méretű vektort visznek tovább, a kimeneti réteg pedig a szótárra vetít.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Token-ID-k</strong><span>T egész szám</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Embedding és pozíció</strong><span>T × d kezdeti állapot</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>L Transformer-blokk</strong><span>T × d kontextusfüggő állapot</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Kimeneti réteg</strong><span>T × |szótár| logit</span></div></div><div class="cols stretch"><section class="card tint"><h3>Méretek a minipéldában</h3><div class="formula">T = 2 &nbsp;&nbsp; d = 2 &nbsp;&nbsp; L = 1 &nbsp;&nbsp; |szótár| = 5</div><p class="small">Az „A macska” bemenet két sorából két darab ötös logitsor készül.</p></section><section class="card signal"><h3>Melyik logitsort használjuk?</h3><p>Tanításkor több bemeneti pozíció jóslatát értékeljük. Generáláskor az utolsó pozíció adja a következő token eloszlását.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A T a tokensor hossza, a d az egy pozícióhoz tartozó modellvektor dimenziója, az L a blokkok száma. A logit egy normalizálatlan, valós értékű pontszám. A softmax alakítja a logitsort eloszlássá.</p><p>Kötegenként a logitok alakja tipikusan B × T × |szótár|. A tanítás és generálás különbsége az, melyik pozíciókat használjuk fel, és hogyan jutunk hozzá az előzményhez.</p></aside>
+  <footer class="slide-footer"><span><a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a> &nbsp;·&nbsp; <a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Causal language modeling</a></span><span>09 / 47</span></footer>
+</section>
+
+<section class="slide" id="mi-az-attention" aria-labelledby="mi-az-attention-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="mi-az-attention-title" tabindex="-1">Mi az attention, és miért fontos?</h2>
+    <p class="lead">Az önfigyelem a bemenet alapján dönti el, mely pozíciók információjából mennyi kerüljön az aktuális vektorba.</p>
+  </header>
+  <div class="slide-body"><div class="card tint distance">
+      <p class="distance-sentence"><span>„A <mark>kulcsok</mark>,</span> <span>amelyeket a kék fiókban találtam, az</span> <span><mark>asztalon</mark> …”</span><span class="link-line" aria-hidden="true"></span></p>
+      <p class="small">Az „asztalon” pozíciója közvetlenül elérheti a korábbi „kulcsok” információját. Ez segíthet a többes számú <b>hevernek</b> folytatásban.</p>
+    </div><div class="cols stretch"><section class="card tint"><h3>Távoli kapcsolat</h3><p>Egy fej egyetlen rétegen belül összeköthet egymástól távoli, látható pozíciókat.</p></section><section class="card signal"><h3>Tartalomfüggő keverés</h3><p>Ugyanaz a pozíció más szövegben más súlyokat kaphat. A keverés az aktuális vektoroktól függ.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A példa szemléltető mondat. Egy attention fej megtanulhat számossághoz vagy más nyelvi kapcsolathoz hasznos információt átvinni. A konkrét fej viselkedését csak méréssel állapíthatnánk meg.</p><p>A hagyományos teljes attention minden megengedett pozíciópárhoz pontszámot képez. Ez rövid utat ad távoli tokenek között, miközben a párok száma a kontextus hosszával négyzetesen nő. Tanításkor a pozíciók számítását a mátrixműveletek párhuzamosítják.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://www.3blue1brown.com/lessons/attention/" target="_blank" rel="noopener">3Blue1Brown · Attention</a></span><span>10 / 47</span></footer>
+</section>
+
+<section class="slide" id="oksagi-maszk" aria-labelledby="oksagi-maszk-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="oksagi-maszk-title" tabindex="-1">Az oksági maszk kizárja a jövőbeli pozíciókat</h2>
+    <p class="lead">A query sora csak saját pozíciójáig olvashat key és value vektorokat. A maszkot a softmax előtt adjuk a pontszámokhoz.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><figure><div class="table-wrap"><table class="data-table seq-matrix" aria-label="Négy pozíció oksági maszkja"><thead><tr><th scope='col'>Query ↓ &nbsp; Key →</th><th scope='col' class='center'><span class="token ">A</span></th><th scope='col' class='center'><span class="token ">␣macska</span></th><th scope='col' class='center'><span class="token ">␣ül</span></th><th scope='col' class='center'><span class="token ">EOS</span></th></tr></thead><tbody><tr><th scope="row" class="rowhead"><span class="token ">A</span></th><td class="center allow">0</td><td class="center mask">−∞</td><td class="center mask">−∞</td><td class="center mask">−∞</td></tr><tr><th scope="row" class="rowhead"><span class="token ">␣macska</span></th><td class="center allow">0</td><td class="center allow">0</td><td class="center mask">−∞</td><td class="center mask">−∞</td></tr><tr><th scope="row" class="rowhead"><span class="token ">␣ül</span></th><td class="center allow">0</td><td class="center allow">0</td><td class="center allow">0</td><td class="center mask">−∞</td></tr><tr><th scope="row" class="rowhead"><span class="token ">EOS</span></th><td class="center allow">0</td><td class="center allow">0</td><td class="center allow">0</td><td class="center allow">0</td></tr></tbody></table></div><figcaption class="caption">Additív maszk. A 0 átengedi a pontszámot, a −∞ után a súly 0 lesz.</figcaption></figure><section class="card signal"><h3>Mi látszik a második sorban?</h3><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="arrow" aria-hidden="true">→</span><span class="token target">␣ül</span></div><p>A <b>macska</b> pozíciója az <b>A</b> és a <b>macska</b> vektorát láthatja. Az <b>ül</b> a következő token, ezért a jósláskor még maszkolt.</p><p class="small">A diagonál látható. Az i. pozíció az i + 1. tokent jósolja.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Egy teljes tanítósorban a jövőbeli tokenek fizikailag jelen lehetnek más bemeneti pozíciókban. A maszk minden rétegben megakadályozza, hogy ezek információja a korábbi pozíciókba visszajusson.</p><p>A −∞ jelölés matematikai ideál. Implementációban maszkolt softmax, nagy negatív érték vagy olyan kernel használható, amely az érintett pozíciók pontszámát eleve kihagyja.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Causal language modeling</a></span><span>11 / 47</span></footer>
+</section>
+
+<section class="slide" id="qkv" aria-labelledby="qkv-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="qkv-title" tabindex="-1">Q, K és V szerepe a figyelmi fejben</h2>
+    <p class="lead">Minden bemeneti állapotból három tanult lineáris vetítés készül. Az azonos fejhez tartozó súlyok közösek a pozíciókon.</p>
+  </header>
+  <div class="slide-body"><div class="cols three stretch"><section class="card tint"><h3>Q · query</h3><p>Az aktuális pozíció vektora, amellyel illeszkedést keresünk.</p><div class="formula">Q = X W<sub>Q</sub><span class="comment">T × dₖ</span></div></section><section class="card tint"><h3>K · key</h3><p>Minden pozíció kulcsvektora, amelyhez a queryt mérjük.</p><div class="formula">K = X W<sub>K</sub><span class="comment">T × dₖ</span></div></section><section class="card signal"><h3>V · value</h3><p>A vektor, amely a keverékbe kerül, ha az adott pozíció súlyt kap.</p><div class="formula">V = X W<sub>V</sub><span class="comment">T × dᵥ</span></div></section></div><div class="formula large">Attention(X) = softmax<sub>soronként</sub>(QKᵀ / √dₖ + M) · V<span class="comment">M a maszk. A nevező a kulcsvektor dimenziójával skálázza a pontszámokat.</span></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A qᵢ · kⱼ pontszorzat a két vektor illeszkedését méri. Ha a komponensek egymástól független, hasonló szórású értékek, a pontszorzat varianciája a dimenzióval nő. A √dₖ skálázás mérsékli a túl nagy pontszámok miatt telítődő softmaxot.</p><p>A V itt az értékvektorok mátrixa. A szótár méretét külön, |szótár| jelöléssel írjuk. A Q/K/V a réteg bemenetéből minden előremenetben újraszámolt aktivációk, a W mátrixok a tanult paraméterek.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://www.3blue1brown.com/lessons/attention/" target="_blank" rel="noopener">3Blue1Brown · Attention</a></span><span>12 / 47</span></footer>
+</section>
+
+<section class="slide" id="tobbfeju" aria-labelledby="tobbfeju-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title" id="tobbfeju-title" tabindex="-1">Több figyelmi fej párhuzamosan kever információt</h2>
+    <p class="lead">A fejek külön vetítéseket tanulnak. A blokk összefűzi a kimeneteiket, majd visszavetíti őket a modell méretére.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Bemeneti állapotok</strong><span>X · T × d</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Párhuzamos fejek</strong><span>Mindegyik saját Q/K/V vetítéssel</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Összefűzés</strong><span>T × (fejek száma · dᵥ)</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Kimeneti vetítés</strong><span>Wₒ · T × d</span></div></div><div class="cols stretch"><section class="card tint"><h3>Miért hasznos a több fej?</h3><p>Egy pozícióhoz több, egymástól eltérő figyelmi keverék készülhet. Az egyik fej például rövid távú, a másik távolabbi kapcsolatot használhat.</p></section><section class="card signal"><h3>Mit mond a figyelmi súly?</h3><p>Egy adott fej egyik keverési együtthatóját. A hatás az értékvektortól, a kimeneti vetítéstől és a későbbi rétegektől is függ.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Például egy 0,9-es súlyú nulla értékvektor nulla hozzájárulást ad. Egy kisebb súlyú nagy értékvektor hatása ennél nagyobb is lehet. Ezért a súlyt és az értéket együtt kell értelmezni, különösen több fejen és rétegen át.</p><p>A hagyományos többfejű attention minden fejhez külön K és V vetítést használ. GQA esetén a queryfejek csoportjai megosztják a K és V fejeket, ami csökkentheti a cache méretét.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://www.3blue1brown.com/lessons/attention/" target="_blank" rel="noopener">3Blue1Brown · Attention</a></span><span>13 / 47</span></footer>
+</section>
+
+<section class="slide" id="gpt-blokk" aria-labelledby="gpt-blokk-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Transformer és attention</p>
+    <h2 class="slide-title compact-title" id="gpt-blokk-title" tabindex="-1">Egy GPT-blokkban az attention és az MLP együtt dolgozik</h2>
+    <p class="lead">Az attention a pozíciók között kever. Az MLP minden pozíció vektorát külön, nemlineárisan alakítja át.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Első részlépés</h3><div class="formula">y = x + Attention(Norm(x))</div><p>A normálás az aktivációk skáláját kezeli. Az attention kimenete hozzáadódik a bemeneti állapothoz.</p></section><section class="card signal"><h3>Második részlépés</h3><div class="formula">h = y + MLP(Norm(y))</div><p>Az MLP a vektor komponenseit alakítja át. A második reziduális kapcsolat a y állapotot adja hozzá.</p></section></div><div class="callout ">A fenti sorrend pre-norm. A blokkok kimenete egymás bemenete, ezért ugyanaz az információ több rétegen át továbbalakulhat.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az MLP tipikusan először másik, gyakran nagyobb dimenzióra vetít, aktivációt vagy kapuzást használ, majd visszavetít d dimenzióra. A rétegen belül ugyanaz az MLP alkalmazódik minden pozícióra.</p><p>A reziduális összeg közvetlen utat ad a bemeneti komponenseknek és a gradiensnek. A normálás pontos típusa és sorrendje modellfüggő. Az eredeti Transformer post-normot írt le, a fenti változat a GPT-stílusú pre-normhoz áll közel.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · The Llama 3 Herd of Models</a></span><span>14 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-gpt" aria-labelledby="mini-gpt-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-gpt-title" tabindex="-1">A mini-GPT teljes bemenete</h2>
+    <p class="lead">A prompt „A macska”. Két dimenzióban számolunk, egy fejjel és egy blokkal. A mini-modellben Norm(x) = x.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><section class="card tint"><h3>Token és pozíció összege</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">i</th><th scope="col">Token</th><th scope="col">E[token]</th><th scope="col">Pᵢ</th><th scope="col">xᵢ</th></tr></thead><tbody><tr><td>1</td><td><span class="token ">A</span></td><td>(0; 1)</td><td>(0; 0)</td><td><b>(0; 1)</b></td></tr><tr class="highlight"><td>2</td><td><span class="token ">␣macska</span></td><td>(0,75; 0)</td><td>(0,25; 0)</td><td><b>(1; 0)</b></td></tr></tbody></table></div></section><section class="card signal"><h3>Mit akarunk megkapni?</h3><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="arrow" aria-hidden="true">→</span><span class="token target">␣ül</span></div><p>A 2. pozícióból készül a következő token eloszlása. Előbb az attentiont, majd az MLP-t, végül a teljes ötös logitsort számoljuk ki.</p></section></div><div class="callout ">A súlyokat egyszerű számoláshoz választottuk. Az összes súly és a futtatható kód megtalálható a <a href='#mini-sulyok'>függelékben</a>.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A két bemeneti vektor X sorai. A vektorok komponenseit pontosvessző választja el, így a magyar tizedesvessző egyértelmű. A modell öt tokenje A, ␣macska, ␣ül, ␣alszik és EOS.</p><p>A mini-modell egyetlen fejében dₖ = 1, dᵥ = 2, a kimeneti vetítés az egységmátrix. A normalizálás identitás, hogy a teljes előremenet kézzel számolható legyen.</p></aside>
+  <footer class="slide-footer"><span></span><span>15 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-qkv" aria-labelledby="mini-qkv-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-qkv-title" tabindex="-1">1. lépés · Kiszámoljuk a Q, K és V vektorokat</h2>
+    <p class="lead">Jelölje x = (x₁; x₂) egy pozíció kétdimenziós állapotát. A fej vetítései az alábbiak.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A három vetítés</h3><div class="formula">q = x₁</div><div class="formula">k = ln(3) · x₁</div><div class="formula">v = (2x₁; 4x₂)</div><p class="small">Itt Q és K egydimenziós, V kétdimenziós. A √dₖ skála értéke 1.</p></section><section class="card signal"><h3>Eredmény tokenenként</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">Pozíció</th><th scope="col">x</th><th scope="col">q</th><th scope="col">k</th><th scope="col">v</th></tr></thead><tbody><tr><td><span class="token ">A</span></td><td>(0; 1)</td><td>0</td><td>0</td><td>(0; 4)</td></tr><tr class="highlight"><td><span class="token ">␣macska</span></td><td>(1; 0)</td><td>1</td><td>ln 3</td><td>(2; 0)</td></tr></tbody></table></div><p class="small">A „macska” queryje 1. A következő dián ezt a két elérhető kulccsal szorozzuk össze.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A képletek a szokásos mátrixszorzás különösen egyszerű esetei. Sorvektoros jelölésben W_Q oszlopa (1; 0), W_K oszlopa (ln 3; 0), W_V pedig diagonális a 2 és 4 értékekkel.</p><p>A vetítési súlyok ugyanazok a két pozíción. A kimenetek azért különböznek, mert a bemeneti x vektorok különböznek.</p></aside>
+  <footer class="slide-footer"><span></span><span>16 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-softmax" aria-labelledby="mini-softmax-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-softmax-title" tabindex="-1">2. lépés · Pontszámból figyelmi súly lesz</h2>
+    <p class="lead">A „macska” queryje 1, az elérhető key értékek 0 és ln(3). A két skálázott pontszám így 0 és ln(3).</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Maszkolt pontszámmátrix</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">Query ↓</th><th scope="col">A kulcsa</th><th scope="col">␣macska kulcsa</th></tr></thead><tbody><tr><td><span class="token ">A</span></td><td>0</td><td>−∞</td></tr><tr class="highlight"><td><span class="token ">␣macska</span></td><td>0</td><td>ln 3</td></tr></tbody></table></div><p class="small">A legelső sor saját magára figyel 100%-kal. A második sorban mindkét kulcs megengedett.</p></section><section class="card result"><h3>Softmax a 2. soron</h3><div class="steps"><div class="calc-step"><div class="label">Exponenciálás</div><div class="mathline">e<sup>0</sup> = 1 &nbsp; és &nbsp; e<sup>ln(3)</sup> = 3</div></div><div class="calc-step"><div class="label">Oszd el az összeggel</div><div class="mathline">1 + 3 = 4</div></div><div class="calc-step"><div class="label">Súlyok</div><div class="mathline">w<sub>A</sub> = 1/4 &nbsp;&nbsp; w<sub>macska</sub> = 3/4</div></div></div></section></div><div class="callout ">A softmax pozitív tömeggé alakítja a megengedett pontszámokat, majd úgy osztja szét, hogy a sor összege 1 legyen.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A képlet wⱼ = exp(sⱼ) / Σₖ exp(sₖ). A gyakorlatban a sor maximumát gyakran levonják exponenciálás előtt. Ettől a hányadosok nem változnak, a numerika stabilabb lesz.</p><p>Az attention-softmax a pozíciókon fut. A modell végén egy másik softmax a szótári tokeneken fut. Az egyik keverési súlyokat, a másik kimeneti tokenvalószínűséget ad.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a></span><span>17 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-value" aria-labelledby="mini-value-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-value-title" tabindex="-1">3. lépés · A V vektorokból keveréket készítünk</h2>
+    <p class="lead">A kiszámolt 25% és 75% a két értékvektor szorzója. Az eredmény új, kétdimenziós információ a „macska” pozíciójához.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left stretch"><section class="card tint"><h3>Hozzájárulások</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">Forrás</th><th scope="col">Súly</th><th scope="col">Value</th><th scope="col">Súly × value</th></tr></thead><tbody><tr><td><span class="token ">A</span></td><td>¼</td><td>(0; 4)</td><td>(0; 1)</td></tr><tr><td><span class="token ">␣macska</span></td><td>¾</td><td>(2; 0)</td><td>(1,5; 0)</td></tr></tbody></table></div><div class="formula">a₂ = (0; 1) + (1,5; 0) = (1,5; 1)</div></section><section class="card result"><h3>A két komponens összege</h3><figure>
+               <div class="vector-plot" role="img" aria-label="Az origótól vízszintesen 1,5 a macska hozzájárulása, függőlegesen 1 az A hozzájárulása. Az eredmény 1,5 és 1.">
+                 <span class="axis-x"></span><span class="axis-y"></span>
+                 <span class="plot-x"></span><span class="plot-y"></span><span class="plot-point"></span>
+                 <span class="plot-origin">0</span><span class="plot-x-label">1,5</span>
+                 <span class="plot-y-label">1</span><span class="plot-total">(1,5; 1)</span>
+               </div>
+               <figcaption class="caption">Vízszintesen a „macska”, függőlegesen az „A” hozzájárulása.</figcaption>
+             </figure><div class="formula">y₂ = x₂ + a₂ = (1; 0) + (1,5; 1) = (2,5; 1)<span class="comment">A reziduális ág hozzáadja a bemeneti állapotot.</span></div></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A vektorok komponensenként adódnak össze. Az első pozícióban a maszk miatt a₁ = (0; 4), ezért y₁ = (0; 5). A minipéldában a figyelmi fej kimeneti vetítése identitás. Egy teljes modellben a fejek összefűzését egy tanult W_O mátrix követi.</p></aside>
+  <footer class="slide-footer"><span></span><span>18 / 47</span></footer>
+</section>
+
+<section class="slide" id="attention-labor" aria-labelledby="attention-labor-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="attention-labor-title" tabindex="-1">Attention-labor · Változtasd meg a súlyokat</h2>
+    <p class="lead">Válassz queryt, majd módosítsd a „macska” kulcsát. Figyeld a maszkolást és a keverék két komponensét.</p>
+  </header>
+  <div class="slide-body">
+<div class="cols wide-left" data-lab="attention">
+  <section class="card tint lab">
+    <div class="choice-group script-only">
+      <fieldset>
+        <legend>Figyelő pozíció</legend>
+        <div class="choices">
+          <button class="choice" type="button" data-query="0" aria-pressed="false">1 · A</button>
+          <button class="choice" type="button" data-query="1" aria-pressed="true">2 · macska</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>A 2. kulcs értéke</legend>
+        <div class="choices">
+          <button class="choice" type="button" data-key="-1" aria-pressed="false">−ln 3</button>
+          <button class="choice" type="button" data-key="0" aria-pressed="false">0</button>
+          <button class="choice" type="button" data-key="1" aria-pressed="true">ln 3</button>
+        </div>
+      </fieldset>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" aria-label="Interaktív figyelmi súlyok">
+        <thead><tr><th scope="col">Key</th><th scope="col">Pontszám</th><th scope="col">Súly</th><th scope="col">Súly × value</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><span class="token ">A</span></th><td data-score="0">0</td><td data-weight="0">25%</td><td data-product="0">(0; 1)</td></tr>
+          <tr><th scope="row"><span class="token ">␣macska</span></th><td data-score="1">ln 3</td><td data-weight="1">75%</td><td data-product="1">(1,5; 0)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="result-line small" data-attn-result aria-live="polite">Súlyozott összeg a = (1,5; 1)</p>
+  </section>
+  <section class="card signal"><h3>Próbáld ki</h3><ul class="list"><li><b>Válts az A pozícióra.</b> A későbbi „macska” maszkolt, így a kulcs változtatása nem módosítja az első sort.</li><li><b>Válts vissza a macskára.</b> A kisebb kulcs kisebb súlyt ad a második V vektornak.</li></ul></section>
+</div><div class="callout ">A Q és K az eloszlást alakítja. A V hordozza a ténylegesen hozzáadott információt.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A három kulcsbeállítás a W_K első együtthatójának megváltoztatását jelenti. q₂ = 1 miatt a második pontszám közvetlenül a kulcsérték lesz. Egyenlő pontszámoknál a két súly 50–50%.</p><p>Az A pozícióban q₁ = 0, de a második kulcs amúgy is maszkolt. A nulla pontszám és a maszkolt pozíció külön fogalom, a táblázat ezt −∞ jellel mutatja.</p></aside>
+  <footer class="slide-footer"><span></span><span>19 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-mlp" aria-labelledby="mini-mlp-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-mlp-title" tabindex="-1">4. lépés · Az MLP továbbalakítja az állapotot</h2>
+    <p class="lead">A kézi példában egy rejtett egység, ReLU aktiváció és egy visszavetítés alkotja az MLP-t.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A mini-MLP képlete</h3><div class="formula">g = ReLU(y₁ − 2y₂)</div><div class="formula">MLP(y) = (0; 2g)</div><p class="small">A ReLU megtartja a pozitív számot, a negatívat 0-ra állítja. y₁ és y₂ itt a vektor két komponense.</p></section><section class="card result"><h3>Számoljuk ki a „macska” helyén</h3><div class="steps"><div class="calc-step"><div class="label">Bemenet</div><div class="mathline">y = (2,5; 1)</div></div><div class="calc-step"><div class="label">Aktiváció</div><div class="mathline">g = max(0; 2,5 − 2 × 1) = 0,5</div></div><div class="calc-step"><div class="label">Reziduális kimenet</div><div class="mathline">h = (2,5; 1) + (0; 1) = (2,5; 2)</div></div></div></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A y indexek a képletben koordinátákat jelentenek. A példában a y=(2,5; 1) a második tokensor állapota. Más pozícióhoz külön y vektor tartozik, de ugyanazt a függvényt alkalmazzuk rá.</p><p>Az első pozíció y vektora (0; 5), így az aktiváció g=0, az MLP hozzájárulása nulla és h=(0; 5). Ez a sor is kap kimeneti logitokat.</p></aside>
+  <footer class="slide-footer"><span></span><span>20 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-logit" aria-labelledby="mini-logit-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-logit-title" tabindex="-1">5. lépés · A kimeneti réteg logitokat számol</h2>
+    <p class="lead">A nyelvi modell feje a „macska” végső állapotát az öt szótári token pontszámává alakítja.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table " aria-label="A mini-GPT kimeneti rétege"><thead><tr><th scope="col">Szótári token</th><th scope="col">Kimeneti függvény h = (h₁; h₂) alapján</th><th scope="col">Logit h = (2,5; 2) esetén</th></tr></thead><tbody><tr><td><span class="token ">A</span></td><td>0</td><td>0</td></tr><tr><td><span class="token ">␣macska</span></td><td>0</td><td>0</td></tr><tr class="highlight"><td><span class="token ">␣ül</span></td><td>(2/5) · ln(4) · h₁</td><td>ln 4</td></tr><tr><td><span class="token ">␣alszik</span></td><td>(2/5) · ln(2) · h₁</td><td>ln 2</td></tr><tr><td><span class="token ">EOS</span></td><td>ln(2) · (h₂ − 2)</td><td>0</td></tr></tbody></table></div><div class="callout ">Minden sor a h vektor egy lineáris függvénye, eltérő tanult együtthatókkal. Az EOS sorban az eltolás −2 · ln(2).</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A modell fejét felírhatjuk z = W h + b alakban, ahol a W mátrixnak öt sora és két oszlopa van. A GPT-típusú modellekben a szótári réteg súlyai össze is köthetők az embeddingtáblával. A mini-GPT külön kimeneti súlyokat használ.</p><p>A logit lehet bármilyen valós szám. Az összes logithoz azonos konstans hozzáadása nem változtatja meg a softmax eloszlást.</p></aside>
+  <footer class="slide-footer"><span><a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a></span><span>21 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-eloszlas" aria-labelledby="mini-eloszlas-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Mini-GPT számolás</p>
+    <h2 class="slide-title" id="mini-eloszlas-title" tabindex="-1">6. lépés · Az öt logitból tokeneloszlás lesz</h2>
+    <p class="lead">Most a softmax a szótár öt elemén fut. Az exponenciált pontszámok összege 1 + 1 + 4 + 2 + 1 = 9.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><div class="table-wrap"><table class="data-table " aria-label="A mini-GPT kezdeti következőtoken-eloszlása"><thead><tr><th scope="col">Token</th><th scope="col">z</th><th scope="col">eᶻ</th><th scope="col">p = eᶻ / 9</th></tr></thead><tbody><tr><td><span class="token ">A</span></td><td>0</td><td>1</td><td>1/9 ≈ 11,1%</td></tr><tr><td><span class="token ">␣macska</span></td><td>0</td><td>1</td><td>1/9 ≈ 11,1%</td></tr><tr class="highlight"><td><span class="token ">␣ül</span></td><td>ln 4</td><td>4</td><td><b>4/9 ≈ 44,4%</b></td></tr><tr><td><span class="token ">␣alszik</span></td><td>ln 2</td><td>2</td><td>2/9 ≈ 22,2%</td></tr><tr><td><span class="token ">EOS</span></td><td>0</td><td>1</td><td>1/9 ≈ 11,1%</td></tr></tbody></table></div><section class="card result"><h3>Melyik következik?</h3><p class="metric">44,4%</p><p>A legvalószínűbb token az <b>„ül”</b>. A mintavétel másik jelöltet is választhat.</p><p class="small">Tanításhoz ugyanebből az eloszlásból olvassuk ki a forrásszövegben szereplő céltoken valószínűségét.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Ez a teljes előremenet a [0,1] prompt utolsó pozíciójában. A többi pozíció vektorai és logitjai ugyanazzal a modellel kiszámolhatók. A számok a kerekítés miatt kijelzésben kis mértékben eltérhetnek a pontos törtektől.</p><p>A valószínűség a következő tokenre vonatkozik. Az egész befejezés esélye a kiválasztott tokenek egymásra feltételes valószínűségeinek szorzata.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/generation_strategies" target="_blank" rel="noopener">Hugging Face · Generation strategies</a></span><span>22 / 47</span></footer>
+</section>
+
+<section class="slide" id="adatok" aria-labelledby="adatok-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="adatok-title" tabindex="-1">A tanítókorpusz minősége része a modellnek</h2>
+    <p class="lead">Az előtanításban az adatok szolgáltatják a céltokeneket. Az adat-előkészítés befolyásolja, milyen mintákat lát a modell.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Források</strong><span>Például webszöveg, könyvek vagy kód</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Előkészítés</strong><span>Nyelv, minőség, ismétlődések, szűrés</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Elkülönítés</strong><span>Tanító-, validációs és tesztadat</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Tanítóköteg</strong><span>Tokenizálás, szeletek, kötegelés</span></div></div><div class="cols stretch"><section class="card tint"><h3>Egy tanítóablak</h3><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="token ">␣ül</span><span class="token stop">EOS</span></div><p class="small">A hosszú anyagból korlátozott hosszúságú tokenszekvenciákat készítünk. Itt a dokumentum végét az EOS jelzi.</p></section><section class="card signal"><h3>Miért kell külön validáció?</h3><p>A súlyok tanítóadatból frissülnek. A külön validációs anyag jelzi, hogy a tanult minták új példákra is használhatók-e.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A források kiválasztása, licencelése, tisztítása és aránya modellenként eltér. A deduplikáció csökkenti az ismétléseket és a tanító-, validációs és értékelőanyagok közti átfedés veszélyét.</p><p>Rövidebb dokumentumokat gyakran egy ablakba csomagolnak. A dokumentumhatárok, padding és veszteségmaszk kezelése a választott adatfolyamtól függ. A minipélda egyetlen teljes mondatot használ.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Causal language modeling</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · The Llama 3 Herd of Models</a></span><span>23 / 47</span></footer>
+</section>
+
+<section class="slide" id="teacher-forcing" aria-labelledby="teacher-forcing-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="teacher-forcing-title" tabindex="-1">A tanítószöveg egy hellyel eltolva adja a célokat</h2>
+    <p class="lead">A következő token tanítójelét a szövegből olvassuk ki. Ez az önfelügyelt előtanítás alapja.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table " aria-label="Egyhellyel eltolt tanítási bemenetek és célok"><thead><tr><th scope="col">Pozíció</th><th scope="col">Bemeneti token</th><th scope="col">Látható előzmény</th><th scope="col">Céltoken</th></tr></thead><tbody><tr><td>1</td><td><span class="token ">A</span></td><td><div class="token-lane"><span class="token ">A</span></div></td><td><span class="token ">␣macska</span></td></tr><tr class="highlight"><td>2</td><td><span class="token ">␣macska</span></td><td><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span></div></td><td><span class="token target">␣ül</span></td></tr><tr><td>3</td><td><span class="token ">␣ül</span></td><td><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span><span class="token ">␣ül</span></div></td><td><span class="token stop">EOS</span></td></tr></tbody></table></div><div class="cols stretch"><section class="card tint"><h3>Teacher forcing</h3><p>A modell az adatsor tényleges előzményét kapja. A 3. pozícióban akkor is az <b>ül</b> a bemenet, ha a 2. pozíció mást jósolna.</p></section><section class="card signal"><h3>Párhuzamos pozíciók</h3><p>Az oksági maszk miatt egy előremenetben mindhárom pozíció jóslata elkészülhet. Minden pozícióhoz saját veszteség tartozik.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A szekvencia négy tokenjéből a szemléltető bemenet [0,1,2], a cél [1,2,4]. Egy könyvtár átveheti a teljes sort is, és elvégezheti az eltolást a modell veszteségfüggvényében. A célt pontosan egyszer kell eltolni.</p><p>A tokenek előre ismert sorozata adja a teacher forcingot. Generáláskor a modell saját választása kerül vissza az előzménybe. Ezért a generálás lépései sorban függenek egymástól.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · Attention Is All You Need</a> &nbsp;·&nbsp; <a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Causal language modeling</a></span><span>24 / 47</span></footer>
+</section>
+
+<section class="slide" id="keresztentropia" aria-labelledby="keresztentropia-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="keresztentropia-title" tabindex="-1">A keresztentrópia a céltoken esélyét méri</h2>
+    <p class="lead">Egy pozíció vesztesége L = −ln(p<sub>cél</sub>). A nagyobb célesélyhez kisebb veszteség tartozik.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><div class="table-wrap"><table class="data-table " aria-label="Három pozíció keresztentrópia-vesztesége"><thead><tr><th scope="col">Pozíció és cél</th><th scope="col">p<sub>cél</sub></th><th scope="col">−ln(p<sub>cél</sub>)</th></tr></thead><tbody><tr><td>1 → macska</td><td>1/12 ≈ 8,3%</td><td>2,485</td></tr><tr class="highlight"><td>2 → ül</td><td>4/9 ≈ 44,4%</td><td>0,811</td></tr><tr><td>3 → EOS</td><td>≈ 40,6%</td><td>0,902</td></tr></tbody></table></div><section class="card result"><h3>Átlag a három célon</h3><div class="formula">(2,485 + 0,811 + 0,902) / 3<br>≈ <b>1,399</b></div><p class="small">A perplexitás e<sup>1,399</sup> ≈ <b>4,05</b>. Ugyanazzal a tokenizerrel és értékeléssel vethető össze más futásokkal.</p></section></div><div class="callout ">A következő két dián a 2. pozíció egyetlen célján vezetjük le a gradienst. Egy tanítási kötegben sok cél veszteségéből számolunk.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A cross-entropy egyetlen kijelölt céltokennél a céltoken negatív logvalószínűségére egyszerűsödik. Ha p=1, a veszteség 0. Ahogy p a nullához közelít, a veszteség növekszik.</p><p>A p(„macska”) az 1. helyen 1/12, mert az első rejtett állapot (0;5) és az EOS logitja ln(8). A p(EOS) a 3. helyen 0,40572. Mindegyik a függelékben található Python-kóddal reprodukálható.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Causal language modeling</a> &nbsp;·&nbsp; <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a></span><span>25 / 47</span></footer>
+</section>
+
+<section class="slide" id="sgd" aria-labelledby="sgd-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="sgd-title" tabindex="-1">Egy súlyfrissítést kézzel is kiszámolhatunk</h2>
+    <p class="lead">A 2. pozícióban az „ül” a cél. Az ül logitjának első súlyát frissítjük, 0,1-es tanulási rátával.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A gradiens útja</h3><div class="steps"><div class="calc-step"><div class="label">Logit</div><div class="mathline">z<sub>ül</sub> = w · h₁ = w · 2,5</div></div><div class="calc-step"><div class="label">A logit gradiense</div><div class="mathline">∂L/∂z<sub>ül</sub> = 4/9 − 1 = −5/9</div></div><div class="calc-step"><div class="label">A súly gradiense</div><div class="mathline">∂L/∂w = (−5/9) · 2,5 = −25/18</div></div></div></section><section class="card result"><h3>SGD-lépés és új jóslat</h3><div class="steps"><div class="calc-step"><div class="label">Frissítés</div><div class="mathline">w′ = w − 0,1 · (−25/18) = w + 5/36</div></div><div class="calc-step"><div class="label">A súly változása</div><div class="mathline">0,5545 → <b>0,6934</b></div></div><div class="calc-step"><div class="label">Új előremenet</div><div class="mathline">p(ül) = <b>53,1%</b> &nbsp; L = <b>0,633</b></div></div></div></section></div><div class="callout ">Az „ül” logitja 25/72-vel nő. Új p(ül) = 4e<sup>25/72</sup> / (5 + 4e<sup>25/72</sup>).</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Softmax és keresztentrópia mellett ∂L/∂zᵢ = pᵢ − 1[i a cél]. A céltokennél a derivált negatív, ezért ebben az esetben a gradiens levonása növeli a kiválasztott súlyt.</p><p>Ebben a lépésben egyetlen tanítható együtthatót mozdítunk meg. A többi exponenciált logit összege 5, ezért az új eloszlást új softmaxszal számoljuk. A 0,633-as veszteséget ugyanazon a mintán mértük.</p></aside>
+  <footer class="slide-footer"><span><a href="https://github.com/karpathy/build-nanogpt" target="_blank" rel="noopener">Karpathy · Let’s build GPT, kód</a></span><span>26 / 47</span></footer>
+</section>
+
+<section class="slide" id="backprop" aria-labelledby="backprop-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="backprop-title" tabindex="-1">A gradiens az attention súlyaiig is eljut</h2>
+    <p class="lead">A visszaterjesztés ugyanazt a láncszabályt alkalmazza a kimeneti fejtől az MLP-n át a figyelmi vetítésekig.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A 2. pozíció visszafelé</h3><div class="steps"><div class="calc-step"><div class="label">A fej visszaterjeszt a h vektorba</div><div class="mathline">∇<sub>h</sub>L = ln(2) · (−16/45; 1/9)</div></div><div class="calc-step"><div class="label">Az aktív ReLU és a reziduális ág</div><div class="mathline">∇<sub>y</sub>L = ln(2) · (−2/15; −1/3)</div></div><div class="calc-step"><div class="label">y = x + a miatt</div><div class="mathline">∇<sub>a</sub>L = ∇<sub>y</sub>L</div></div></div></section><section class="card result"><h3>Példa egy korai súlyra</h3><p class="small">Legyen w<sub>V</sub> az első V koordináta együtthatója. Alapértéke 2. A „macska” első x komponense 1, figyelmi súlya 3/4.</p><div class="formula">∂a₁/∂w<sub>V</sub> = (3/4) × 1 = 3/4</div><div class="formula">∂L/∂w<sub>V</sub> = (−2/15) · ln(2) · 3/4<br>= <b>−ln(2)/10 ≈ −0,0693</b></div></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A kimeneti fejben z_ül = (2/5)ln(4)·h₁ és z_alszik = (2/5)ln(2)·h₁. Ezért ∂L/∂h₁ = (−5/9)(2/5)ln(4) + (2/9)(2/5)ln(2) = −(16/45)ln(2). A h₂ komponenst az EOS sor érinti, deriváltja (1/9)ln(2).</p><p>Az aktív ReLU-nál h=(y₁; y₂+2(y₁−2y₂))=(y₁; 2y₁−3y₂). Ez adja a visszafelé irányú szorzókat. A V vetítés csak az értékvektoron keresztül változtatja a keveréket, a Q/K pontszámokon nem.</p><p>A függelék modelljében a V együttható apró pozitív és negatív változtatásával, véges differenciával is ellenőrizhető a gradiens.</p></aside>
+  <footer class="slide-footer"><span><a href="https://github.com/karpathy/build-nanogpt" target="_blank" rel="noopener">Karpathy · Let’s build GPT, kód</a></span><span>27 / 47</span></footer>
+</section>
+
+<section class="slide" id="tanitasi-ciklus" aria-labelledby="tanitasi-ciklus-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="tanitasi-ciklus-title" tabindex="-1">A nagy modell ugyanezt a ciklust ismétli</h2>
+    <p class="lead">Előtanításkor sok köteg adja a tanítójelet, a visszaterjesztés pedig a rétegek tanítható paramétereire számol gradienst.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Köteg</strong><span>Sok tokensor és eltolva a célok</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Előremenet</strong><span>Logitok és átlagolt veszteség</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Visszaterjesztés</strong><span>Gradiensek az összes tanítható súlyra</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Optimalizáló</strong><span>Új paraméterek, majd következő köteg</span></div></div><div class="cols stretch"><section class="card tint"><h3>Frissítés a gyakorlatban</h3><p>Gyakori optimalizáló az <b>AdamW</b>. A korábbi gradiensekből becsli a lépést, és külön kezeli a súlycsillapítást.</p></section><section class="card signal"><h3>Mérés és ellenőrzés</h3><p>Az elkülönített validációs veszteség a tanulás alakulását mutatja. A használati feladatokra külön mérés kell, például utasításkövetési teszt.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az első előtanítás általában inicializált súlyokból indul. Folytatólagos előtanítás indulhat egy korábbi checkpointból. Az optimalizáló állapotot is tárol, ezért a tanítás memóriaigénye nagyobb a súlyok puszta tárolásánál.</p><p>A kiszolgálással szemben tréningkor a gráf köztes aktivációi vagy azok újraszámítása is szükséges. A nagy futások az adatokat, a számításokat vagy a modell részeit több gyorsítóra osztják.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Causal language modeling</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener">Loshchilov és Hutter · AdamW</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · The Llama 3 Herd of Models</a></span><span>28 / 47</span></footer>
+</section>
+
+<section class="slide" id="sft" aria-labelledby="sft-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="sft-title" tabindex="-1">Az utótanítás első lépése lehet az SFT</h2>
+    <p class="lead">Felügyelt finomhangoláskor a mintákban már kérések és kívánt válaszok szerepelnek.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Egy utasítás–válasz pár</h3><p class="label">Felhasználó</p><p>„Add meg két szóban, mi történik.”</p><p class="label">Asszisztens</p><p>„Macska ül.”</p><p class="small">A chat sablon szerepjelölőkkel egy tokensorba fűzi a párt.</p></section><section class="card signal"><h3>A tanítójel</h3><p>A minta megadja, hogyan folytassa az asszisztens a kérést. Az SFT továbbra is tokencélokat használ.</p><p class="small">Gyakori beállításban a válasz tokenjei járulnak hozzá a veszteséghez. A prompt a látható előzmény része.</p></section></div><div class="callout ">Az előtanított alapmodell szöveget folytat. Az utasításon és válaszon tanított modell a párbeszédben elvárt viselkedést is gyakorolja.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>SFT = supervised fine-tuning. Az előtanítás önfelügyelt adatsoraihoz képest itt szándékosan összeállított instrukciós mintákat használunk. A bemutatott kérés–válasz rövid példa.</p><p>A role tokenek, lezárók, maszkolt pozíciók és a veszteség pontos implementációja modell- és adatfüggő. A következő szakaszban a minták már válaszok közötti preferenciát is kódolhatnak.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">Ouyang és mtsai. · InstructGPT</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · The Llama 3 Herd of Models</a></span><span>29 / 47</span></footer>
+</section>
+
+<section class="slide" id="preferencia" aria-labelledby="preferencia-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="preferencia-title" tabindex="-1">A preferenciaadat két válasz közül választ</h2>
+    <p class="lead">A célhoz illőbb, pontosabb vagy hasznosabb válasz rangsora további tanítójelet ad.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Közös kiindulás</h3><p class="label">Kérés</p><p>„Egy mondatban mondd el, mi az attention.”</p><p><b>A.</b> A tokenek más tokenek információját súlyozva használják.</p><p><b>B.</b> A modell minden tokent egyformán kezel.</p><p class="small">A mintában az értékelő A-t választja.</p></section><section class="card signal"><h3>Két tanítási út</h3><ul class="list"><li><b>InstructGPT (RLHF).</b> A rangsorokból jutalommodell tanul, majd PPO-val a nyelvi modell a jutalomjelhez igazodik.</li><li><b>DPO.</b> A választott és elutasított válasz valószínűségét referenciamodellhez viszonyítva közvetlenül optimalizálja a nyelvi modellt.</li></ul></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az InstructGPT-ben SFT-t végeztek demonstrációkkal, azután annotátorok válaszokat rangsoroltak. A jutalommodell a preferenciákat becsülte. A PPO-lépés a jutalomra optimalizált, eltérésbüntetéssel a kiinduló viselkedéshez képest.</p><p>A DPO szintén preferenciapárokkal dolgozik. A bemutatott alapváltozat fix referenciamodellhez méri a két válasz logvalószínűségének relatív változását. A jel minősége függ a példáktól és az értékelési szempontoktól.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">Ouyang és mtsai. · InstructGPT</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">Rafailov és mtsai. · Direct Preference Optimization</a></span><span>30 / 47</span></footer>
+</section>
+
+<section class="slide" id="valos-trening" aria-labelledby="valos-trening-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Tanítás és utótanítás</p>
+    <h2 class="slide-title" id="valos-trening-title" tabindex="-1">Llama 3 · hogyan néz ki mindez egy valós tréningben?</h2>
+    <p class="lead">A technikai jelentés egy konkrét példát ad arra, hogyan kapcsolódik össze az előtanítás és az utótanítás.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Előtanítás</h3><p class="metric">≈ 15 billió</p><p>többnyelvű token (15 × 10<sup>12</sup>), oksági nyelvi cél. A jelentés külön tárgyalja a szűrést, a deduplikációt és az adatösszetételt.</p></section><section class="card signal"><h3>Utótanítás</h3><p>Több körben mintaválaszos finomhangolás (SFT) és DPO. A válaszjelöltek kiválogatásához jutalommodellt és elutasításos mintavételt is alkalmaztak.</p></section></div><div class="callout ">A nagy lépték több adatot, több paramétert és elosztott számítást jelent. Az előtanítás alapfeladata itt is a következő token jóslása.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A hivatkozott jelentés §3 fejezete mutatja be az előtanítást, §4 az utótanítást. A kb. 15 billió többnyelvű token az ismertetett Llama 3 korpuszra vonatkozik.</p><p>Az elutasításos mintavételnél több válaszjelölt készül, majd a kiválasztási szabály szerint jobb minőségű jelöltek kerülnek a tanítóadatba. A tanítási recept és az architektúra két külön döntés.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · The Llama 3 Herd of Models</a></span><span>31 / 47</span></footer>
+</section>
+
+<section class="slide" id="generalas" aria-labelledby="generalas-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="generalas-title" tabindex="-1">A generálás visszafűzi a saját választását</h2>
+    <p class="lead">A frissített mini-GPT-t futtatjuk rögzített súlyokkal. A greedy szabály mindig a legnagyobb logitú tokent választja.</p>
+  </header>
+  <div class="slide-body">
+<div class="cols wide-left" data-lab="generation">
+  <section class="card tint lab">
+    <p class="label">Aktuális kontextus</p>
+    <div class="token-lane" data-prefix><span class="token ">A</span><span class="token ">␣macska</span></div>
+    <p class="result-line small" data-generation-result aria-live="polite">Az első greedy választás az „ül”, 53,1%-os valószínűséggel.</p>
+    <div class="choices script-only">
+      <button class="lab-button action" type="button" data-decode-step>Következő token</button>
+      <button class="lab-button" type="button" data-decode-reset>Újrakezdés</button>
+    </div>
+  </section>
+  <section class="card signal"><h3>A két lépés</h3><div class="table-wrap"><table class="data-table " aria-label="A frissített mini-GPT greedy lépései"><thead><tr><th scope="col">Bemenet végén</th><th scope="col">Kiválasztott token</th><th scope="col">p</th></tr></thead><tbody><tr><td><span class="token ">␣macska</span></td><td><span class="token target">␣ül</span></td><td>53,1%</td></tr><tr><td><span class="token ">␣ül</span></td><td><span class="token stop">EOS</span></td><td>39,9%</td></tr></tbody></table></div><p class="small">Az EOS után a látható válasz „ ül”.</p></section>
+</div><div class="flow"><div class="flow-step"><strong>Előremenet</strong><span>Az utolsó pozícióból logitsor</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Kiválasztás</strong><span>Greedy vagy mintavétel</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Hozzáfűzés</strong><span>Az új tokenből új előzmény lesz</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Megállás</strong><span>EOS vagy például tokenlimit</span></div></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A frissített súllyal a prompt utolsó pozíciójában a p(ül)=0,53098. Hozzáfűzés után x₃=(0;1), q₃=0, így mindhárom elérhető pozíció figyelmi súlya 1/3. Az attention (2/3;8/3), a végső h₃=(2/3;11/3).</p><p>A harmadik helyen z_EOS=(5/3)ln(2)≈1,155. A frissített z_ül≈0,462, z_alszik≈0,185, a másik két logit 0. Így az EOS a maximum, miközben a teljes eloszlásban csak 39,9%-ot kap.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/generation_strategies" target="_blank" rel="noopener">Hugging Face · Generation strategies</a></span><span>32 / 47</span></footer>
+</section>
+
+<section class="slide" id="dekodolas" aria-labelledby="dekodolas-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="dekodolas-title" tabindex="-1">A dekódolás dönt az eloszlás alapján</h2>
+    <p class="lead">A logitokból többféle kiválasztási szabály készíthet konkrét tokent. A példák a frissítés előtti 4/9-es eloszlásból indulnak.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Greedy és mintavétel</h3><ul class="list"><li><b>Greedy.</b> A maximum logit nyer. Itt ez az „ül”.</li><li><b>Mintavétel.</b> A tokeneket az eloszlás szerint sorsoljuk. A 2/9 esélyű „alszik” is előjöhet.</li><li><b>Hőmérséklet.</b> A softmax előtt z/τ. τ = 0,5-nél eᶻ tömegeit négyzetre emeljük, így p(ül) = 16/23 ≈ 69,6%.</li></ul></section><section class="card signal"><h3>A jelöltek szűkítése</h3><ul class="list"><li><b>Top-k.</b> A k legnagyobb jelöltet tartjuk meg, majd újranormálunk.</li><li><b>Top-p.</b> A rendezett listából annyi jelöltet tartunk meg, hogy összegük elérje a küszöböt.</li><li>p = 0,60 küszöbnél 4/9 + 2/9 elég. A két megtartott token esélye <b>2/3</b> és <b>1/3</b>.</li></ul></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A τ pozitív hőmérséklet. Kisebb értéke jobban kiemeli a magas logitokat, a nagyobb egyenletesebbé teszi a valószínűségeket. A greedy döntés maximumot választ, ezért külön kezeljük.</p><p>A top-p küszöböt mindig a hőmérséklettel módosított, rendezett eloszláson számoljuk, amikor a két eljárást így kombináljuk. A küszöböt éppen átlépő jelölt még a megtartott halmazba kerül.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/generation_strategies" target="_blank" rel="noopener">Hugging Face · Generation strategies</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener">Holtzman és mtsai. · Nucleus sampling</a></span><span>33 / 47</span></footer>
+</section>
+
+<section class="slide" id="dekodolo-labor" aria-labelledby="dekodolo-labor-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="dekodolo-labor-title" tabindex="-1">Dekódoló labor · Hogyan változik a folytatás esélye?</h2>
+    <p class="lead">A csúszkák ugyanazt az öt kezdeti logitot alakítják. Próbáld ki τ = 1 mellett a 0,60-as top-p küszöböt.</p>
+  </header>
+  <div class="slide-body">
+<div class="cols" data-lab="decoding">
+  <section class="card tint lab">
+    <div class="script-only">
+      <label class="range-control">Hőmérséklet τ <output data-temperature-readout>1,00</output>
+        <input type="range" data-temperature min="0.25" max="2" value="1" step="0.05">
+      </label>
+      <label class="range-control">Top-p küszöb <output data-top-p-readout>1,00</output>
+        <input type="range" data-top-p min="0.35" max="1" value="1" step="0.01">
+      </label>
+      <div class="choices">
+        <button class="lab-button action" type="button" data-sample>Mintavétel</button>
+        <button class="lab-button" type="button" data-decode-default>Alapértékek</button>
+      </div>
+    </div>
+    <p class="small" data-sample-result aria-live="polite">A mintavétel a megmaradó jelöltek között történik.</p>
+  </section>
+  <section class="card signal lab">
+    <h3>Szűrés után, újranormálva</h3>
+    <div class="bars" aria-label="A következő token valószínűségei"><div class="bar-row" data-bar-row="0"><span class="token ">A</span><div class="track" aria-hidden="true"><div class="bar" style="width:11.1111%"></div></div><span class="bar-value">11,1%</span></div><div class="bar-row" data-bar-row="1"><span class="token ">␣macska</span><div class="track" aria-hidden="true"><div class="bar" style="width:11.1111%"></div></div><span class="bar-value">11,1%</span></div><div class="bar-row leading" data-bar-row="2"><span class="token target">␣ül</span><div class="track" aria-hidden="true"><div class="bar" style="width:44.4444%"></div></div><span class="bar-value">44,4%</span></div><div class="bar-row" data-bar-row="3"><span class="token ">␣alszik</span><div class="track" aria-hidden="true"><div class="bar" style="width:22.2222%"></div></div><span class="bar-value">22,2%</span></div><div class="bar-row" data-bar-row="4"><span class="token ">EOS</span><div class="track" aria-hidden="true"><div class="bar" style="width:11.1111%"></div></div><span class="bar-value">11,1%</span></div></div>
+  </section>
+</div><div class="callout ">Figyeld meg, hogy a hőmérséklet átrendezi a tömeget. A top-p egész jelölteket távolíthat el.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A sávok az újranormált valószínűséget mutatják, a 0%-os tokenek kiestek a kiválasztási halmazból. A mintavétel egymástól független véletlen húzásokat végez az aktuális eloszlásból.</p><p>Kiinduláskor τ=1 és top-p=1, ezért a sávok a mini-GPT alapértékei. τ=1 és top-p=0,60 esetén az „ül” körülbelül 66,7%, az „alszik” 33,3%.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/generation_strategies" target="_blank" rel="noopener">Hugging Face · Generation strategies</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener">Holtzman és mtsai. · Nucleus sampling</a></span><span>34 / 47</span></footer>
+</section>
+
+<section class="slide" id="kv-cache" aria-labelledby="kv-cache-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="kv-cache-title" tabindex="-1">A KV-cache elkerüli a régi K és V újraszámítását</h2>
+    <p class="lead">Az oksági maszk miatt egy új token nem változtatja meg a korábbi pozíciók rétegállapotait. A már kiszámolt kulcsok és értékek újrahasználhatók.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Prefill · a prompt feldolgozása</h3><div class="token-lane"><span class="token ">A</span><span class="token ">␣macska</span></div><div class="formula">K = (0; ln 3)</div><div class="formula">V sorai = (0; 4), (2; 0)</div><p class="small">A K/V párok minden attentionrétegben elmenthetők.</p></section><section class="card signal"><h3>Decode · egy új pozíció</h3><div class="token-lane"><span class="token target">␣ül</span><span class="arrow" aria-hidden="true">→</span><span class="token stop">EOS</span></div><div class="formula">q₃ = 0 &nbsp;&nbsp; k₃ = 0 &nbsp;&nbsp; v₃ = (0; 4)</div><p class="small">Az új query a két tárolt és az új kulcsot pontozza. Mindhárom pontszám 0, mindhárom súly 1/3.</p></section></div><div class="callout ">A cache gyorsít, miközben az új query továbbra is számol a látható régi pozíciókkal.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A cache rétegenként tárol K és V aktivációkat, a dekódoló lépés az új pozícióhoz képezi a Q/K/V-t. A korábbi queryk újraszámolása felesleges az új logitsorhoz.</p><p>A minipéldában a 3. pozíció új value-ja (0;4). A cache mellett a számolás eredménye ugyanaz, mint a teljes háromtokenes előzmény újbóli futtatásakor.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/cache_explanation" target="_blank" rel="noopener">Hugging Face · How caching works</a></span><span>35 / 47</span></footer>
+</section>
+
+<section class="slide" id="koltseg" aria-labelledby="koltseg-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="koltseg-title" tabindex="-1">A hosszabb kontextus számítást és memóriát kér</h2>
+    <p class="lead">A teljes attention párjai a tokensor hosszával nőnek. A cache elosztja a költséget az első feldolgozás és a további lépések között.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A figyelmi számítás léptéke</h3><ul class="list"><li><b>Prefill.</b> Teljes attentionnél T × T lehetséges query–key hely, oksági esetben ennek háromszöge.</li><li><b>Decode cache-sel.</b> Egy új query T kulccsal kerül kapcsolatba rétegenként.</li><li>A modell vetítései és MLP-i ezen felül is számolnak.</li></ul></section><section class="card result"><h3>Egy cache-méret példa</h3><p class="small">1 sorozat · 32 réteg · 4 096 token · 8 K/V fej · 128 komponens · 2 bájt/érték.</p><div class="formula">2 × 32 × 4096 × 8 × 128 × 2<br>= <b>512 MiB</b><span class="comment">Az első 2 a K és V. Az utolsó 2 a tárolt érték bájtmérete.</span></div><p class="small">A szám csak a K/V cache-re vonatkozik.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Teljes attentionnél az előfeldolgozás figyelmi részének műveletszáma T-ben négyzetes, a cache-sel egyetlen dekódolt token figyelmi része T-ben lineáris. Ez a becslés azonos fejméret és teljes láthatóság mellett érvényes.</p><p>A memória képlete azonos key- és value-méretet feltételez. Grouped-query attention esetén több query fej osztozik egy K/V fejen, így a K/V fejek számát kell behelyettesíteni. A tényleges megvalósítás további puffereket és eltérő pontosságot használhat.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/cache_explanation" target="_blank" rel="noopener">Hugging Face · How caching works</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · The Llama 3 Herd of Models</a></span><span>36 / 47</span></footer>
+</section>
+
+<section class="slide" id="kontextusablak" aria-labelledby="kontextusablak-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="kontextusablak-title" tabindex="-1">Hol van az információ futtatás közben?</h2>
+    <p class="lead">Az aktuális kérdés, a tanult súlyok és a gyorsítótár más szerepet töltenek be.</p>
+  </header>
+  <div class="slide-body"><div class="cols three stretch"><section class="card tint"><h3>Tanult súlyok</h3><p>A tréning során kialakult paraméterek. Befolyásolják, milyen mintákat ismer fel és milyen folytatásokat ad a modell.</p></section><section class="card signal"><h3>Aktuális kontextus</h3><p>A rendelkezésre álló tokensor. Ide kerülhet a prompt, az előzmény és visszakeresett forrásszöveg is.</p></section><section class="card result"><h3>KV-cache</h3><p>A feldolgozott tokensor köztes kulcs- és értékvektorai. A következő dekódolási lépéseket gyorsítja.</p></section></div><div class="callout ">A retrieval-augmented generation (RAG) lekért részleteket tesz a promptba, így futtatáskor friss forrásból is dolgozhat a modell.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A kontextusablakban véges számú token fér el. A kiszolgáló a régebbi részeket elhagyhatja, összefoglalhatja vagy visszakeresheti. Ezek az alkalmazás döntései.</p><p>A RAG gyakorlati folyamata gyakran keresésből, releváns forrásrészletek összeállításából és a szövegmodell meghívásából áll. Az aktuális forrást az alkalmazás teszi elérhetővé a kontextusban.</p></aside>
+  <footer class="slide-footer"><span><a href="https://huggingface.co/docs/transformers/cache_explanation" target="_blank" rel="noopener">Hugging Face · How caching works</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">Lewis és mtsai. · Retrieval-Augmented Generation</a></span><span>37 / 47</span></footer>
+</section>
+
+<section class="slide" id="megertes" aria-labelledby="megertes-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Generálás és futtatás</p>
+    <h2 class="slide-title" id="megertes-title" tabindex="-1">Hogyan függ a token jelentése a kontextustól?</h2>
+    <p class="lead">Azonos token-ID-hez azonos kiinduló embedding tartozhat. Az attention és a további rétegek eltérő rejtett állapotokat számolhatnak belőle.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Főnévi kontextus</h3><p>„A turista a <mark>vár</mark> …”</p><p><b>Lehetséges folytatás</b> → „kapujához sétál.”</p><p class="small">Az előzmény egy helyre utal.</p></section><section class="card signal"><h3>Igei kontextus</h3><p>„A turista a buszra <mark>vár</mark> …”</p><p><b>Lehetséges folytatás</b> → „a megállóban.”</p><p class="small">Az előzmény egy cselekvésre utal.</p></section></div><div class="callout ">A modell valószínűsége a szöveg folytatására vonatkozik. Egy tényszerű állításhoz forrás vagy külön ellenőrzés ad bizonyítékot.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az ábra nyelvi intuíciót mutat. Ha a tokenizer mindkét helyen azonos ID-t ad a „vár” darabnak, a tokenembedding azonos, az adott pozíció és előzmény viszont eltérhet. Az attention hozzáfér a különböző bal oldali kontextusokhoz.</p><p>A kontextusérzékenység mérhető a kimeneti jóslatok változásával vagy a rejtett állapotok vizsgálatával. A hihető folytatásban előfordulhat téves állítás, mert az optimalizált feladat elsősorban nyelvi predikció és a választott utótanítási jel.</p></aside>
+  <footer class="slide-footer"><span><a href="https://www.3blue1brown.com/lessons/attention/" target="_blank" rel="noopener">3Blue1Brown · Attention</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">Ouyang és mtsai. · InstructGPT</a></span><span>38 / 47</span></footer>
+</section>
+
+<section class="slide" id="feladat-attention" aria-labelledby="feladat-attention-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="feladat-attention-title" tabindex="-1">Feladat 1 · Mi történik, ha a második key gyengül?</h2>
+    <p class="lead">Maradjon a második pozíció queryje 1. Cseréld a „macska” kulcsát ln(3)-ról −ln(3)-ra.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Adatok</h3><div class="formula">q₂ = 1 &nbsp;&nbsp; k₁ = 0 &nbsp;&nbsp; k₂ = −ln(3)</div><div class="formula">v₁ = (0; 4) &nbsp;&nbsp; v₂ = (2; 0)</div><p class="small">Mindkét kulcs látható a 2. sorban.</p></section><section class="card signal"><h3>Számold ki</h3><ol class="list"><li>A két softmax-súlyt.</li><li>A súlyozott V összeget.</li><li>A reziduális összeadás utáni y állapotot.</li></ol></section></div><details class="reveal"><summary>Megoldás</summary><p>e⁰ = 1, e<sup>−ln(3)</sup> = 1/3. A súlyok (¾; ¼). Az összeg ¾ · (0; 4) + ¼ · (2; 0) = <b>(0,5; 3)</b>. A maradékág hozzáadja x₂ = (1; 0)-t, így <b>y = (1,5; 3)</b>.</p></details></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Ugyanez ellenőrizhető az attention-laborban. A következő MLP egység itt inaktív, mert 1,5−2×3 negatív, ezért h=(1,5;3). Az első query kimenete változatlan marad a maszkolás miatt.</p></aside>
+  <footer class="slide-footer"><span></span><span>39 / 47</span></footer>
+</section>
+
+<section class="slide" id="feladat-gradiens" aria-labelledby="feladat-gradiens-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="feladat-gradiens-title" tabindex="-1">Feladat 2 · Mi lenne, ha „alszik” volna a cél?</h2>
+    <p class="lead">Az alapeloszlásban p(alszik) = 2/9, és a kimeneti súlyhoz tartozó rejtett komponens h₁ = 2,5.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Kiindulás</h3><div class="formula">z<sub>alszik</sub> = w · h₁</div><div class="formula">∂L/∂z<sub>alszik</sub> = p<sub>alszik</sub> − 1</div></section><section class="card signal"><h3>Számold ki</h3><p>Mekkora ∂L/∂w? Mennyit változik az „alszik” súlya egy η = 0,1 lépésben?</p></section></div><details class="reveal"><summary>Megoldás</summary><p>∂L/∂z = 2/9 − 1 = −7/9. Ezt 2,5-tel szorozva <b>∂L/∂w = −35/18</b>. Az SGD-lépés −0,1-szer ennyi, tehát a súly <b>7/36 ≈ 0,1944</b>-gyel nő.</p></details></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Az összes többi súlyt rögzítve az új logit 35/72-del magasabb. Az új p(alszik) = 2e^(35/72)/(7+2e^(35/72)), ami körülbelül 31,7%. A feladat az alapmodellhez tér vissza, az előző súlyfrissítés nélkül.</p></aside>
+  <footer class="slide-footer"><span></span><span>40 / 47</span></footer>
+</section>
+
+<section class="slide" id="feladat-dekodolas" aria-labelledby="feladat-dekodolas-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="feladat-dekodolas-title" tabindex="-1">Feladat 3 · Melyik token marad a mintavételben?</h2>
+    <p class="lead">Az öt eredeti exponenciált logittömeg 1, 1, 4, 2 és 1. Legyen a hőmérséklet 0,5, a top-p küszöb 0,65.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Hőmérséklet</h3><p>Oszd a logitokat 0,5-tel. Az exponenciált értékek ezzel négyzetre emelkednek.</p></section><section class="card signal"><h3>Top-p</h3><p>Számolj eloszlást, majd a legnagyobb jelölttől haladva add össze a tömeget a 0,65-ös küszöbig.</p></section></div><details class="reveal"><summary>Megoldás</summary><p>Az új tömegek 1, 1, 16, 4 és 1. Az „ül” önmagában <b>16/23 ≈ 69,6%</b>, tehát átlépi a küszöböt. Csak ez a jelölt marad, az újranormált esélye <b>100%</b>.</p></details></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A feladat a dekódoló laborban is ellenőrizhető a 0,50-es hőmérséklettel és a 0,65-ös top-p beállítással. A mintavétel ebben az esetben biztosan ugyanazt a tokent húzza.</p></aside>
+  <footer class="slide-footer"><span></span><span>41 / 47</span></footer>
+</section>
+
+<section class="slide" id="osszefugges" aria-labelledby="osszefugges-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="osszefugges-title" tabindex="-1">Kövesd végig, mi változik a két műveletben</h2>
+    <p class="lead">Ugyanaz a modell számol logitokat. A különbséget az előzmény eredete és a következő művelet adja.</p>
+  </header>
+  <div class="slide-body"><div class="prose-stack"><p class="label">Tanítás</p><div class="flow"><div class="flow-step"><strong>Ismert szöveg</strong><span>A macska ül</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Jóslat</strong><span>p(ül | A, macska)</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Veszteség</strong><span>−ln p(ül)</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Új súly</strong><span>Gradiens és optimalizáló</span></div></div><p class="label">Generálás</p><div class="flow"><div class="flow-step"><strong>Adott előzmény</strong><span>A macska</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Jóslat</strong><span>Következőtoken-eloszlás</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Választás</strong><span>Például ül</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Új előzmény</strong><span>A macska ül</span></div></div></div><div class="callout ">Mindkét útban az attention dönti el, mennyi információ érkezik az egyes látható pozíciókból a következő jósláshoz.</div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>Ellenőrző kérdés: Miért nem olvashatja a „macska” pozíció az „ül” értékvektorát akkor sem, ha az teljes tanítósorban ott van? Válasz: a 2. sor oksági maszkja kizárja a 3. pozíciót. A tréning célként használja a tokent, a jóslás bemeneteként csak a későbbi sorokban.</p></aside>
+  <footer class="slide-footer"><span></span><span>42 / 47</span></footer>
+</section>
+
+<section class="slide" id="oktatoanyagok" aria-labelledby="oktatoanyagok-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="oktatoanyagok-title" tabindex="-1">Oktatóanyagok további tanuláshoz</h2>
+    <p class="lead">A vizuális magyarázattól a gyakorlati tanításon át egy saját GPT-implementációig.</p>
+  </header>
+  <div class="slide-body"><div class="sources"><div class="source-row"><div><a href="https://www.3blue1brown.com/lessons/gpt/" target="_blank" rel="noopener">3Blue1Brown · 5. lecke</a> · <a href="https://www.3blue1brown.com/lessons/attention/" target="_blank" rel="noopener">6. lecke</a></div><p>Kövesd az embeddinget, majd a Q/K egyezések és a V vektorok vizuális magyarázatát.</p></div><div class="source-row"><div><a href="https://huggingface.co/learn/llm-course/chapter1/4" target="_blank" rel="noopener">Hugging Face · Transformer-felépítések</a> · <a href="https://huggingface.co/learn/llm-course/chapter6/5" target="_blank" rel="noopener">BPE</a></div><p>Olvasd át a három architektúrát és a tokenizálást. Próbáld újraszámolni a BPE-példa párait.</p></div><div class="source-row"><div><a href="https://huggingface.co/learn/llm-course/chapter7/6" target="_blank" rel="noopener">Hugging Face · Oksági modell tanítása</a></div><p>Kóddal mutatja meg a tanítószekvenciákat, a következőtoken-célt és a generálást.</p></div><div class="source-row"><div><a href="https://www.youtube.com/watch?v=kCc8FmEb1nY" target="_blank" rel="noopener">Karpathy · Let’s build GPT</a> · <a href="https://github.com/karpathy/build-nanogpt" target="_blank" rel="noopener">Kód és notebook</a></div><p>Építs végig egy kis GPT-t PyTorchban, a tanítási ciklustól a maszkolt attentionön át a dekódolásig.</p></div><div class="source-row"><div><a href="https://huggingface.co/docs/transformers/cache_explanation" target="_blank" rel="noopener">Hugging Face · KV-cache</a></div><p>Kövesd a tárolt K/V sorokhoz hozzáfűzött új vektort és a maszkméretek változását.</p></div></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A vizuális anyagok jók a képletek előtti intuícióhoz. A kurzus és a Karpathy-kód inkább azoknak szól, akik meg szeretnék nézni, hogyan jelenik meg a tokeneltolás, a maszk és a tanulási ciklus egy konkrét implementációban.</p></aside>
+  <footer class="slide-footer"><span></span><span>43 / 47</span></footer>
+</section>
+
+<section class="slide" id="tanulmanyok" aria-labelledby="tanulmanyok-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="tanulmanyok-title" tabindex="-1">Elsődleges források fejezetenként</h2>
+    <p class="lead">A diák láblécében a kapcsolódó anyag közvetlenül megnyitható.</p>
+  </header>
+  <div class="slide-body"><div class="sources"><div class="source-row"><div><a href="https://arxiv.org/html/1706.03762" target="_blank" rel="noopener">Vaswani és mtsai. · 2017</a></div><p>1. ábra és §3. Az eredeti Transformer, a maszk és a skálázott attention.</p></div><div class="source-row"><div><a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener">Radford és mtsai. · GPT-2</a> · <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">Devlin és mtsai. · BERT</a></div><p>A dekóderes nyelvi cél és a kétirányú, maszkolt modell két konkrét példája.</p></div><div class="source-row"><div><a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener">Su és mtsai. · RoFormer</a></div><p>§3. A relatív pozícióinformációt hordozó forgatások.</p></div><div class="source-row"><div><a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">Ouyang és mtsai. · InstructGPT</a> · <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">Rafailov és mtsai. · DPO</a></div><p>Emberi preferencia, jutalommodell és közvetlen preferenciaoptimalizálás.</p></div><div class="source-row"><div><a href="https://arxiv.org/html/2407.21783" target="_blank" rel="noopener">Dubey és mtsai. · Llama 3</a></div><p>§3–4. Nyilvános esettanulmány az előtanításról és az utótanításról.</p></div><div class="source-row"><div><a href="https://arxiv.org/abs/1904.09751" target="_blank" rel="noopener">Holtzman és mtsai. · Nucleus sampling</a></div><p>A top-p mintavétel eredeti leírása.</p></div></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A tananyag a hivatkozott architektúrákat és tanítási célokat saját magyar példákkal köti össze. A mini-GPT számai kézzel választott paraméterekből származnak. A Llama 3 adatmennyisége a technikai jelentésben közölt becslés.</p></aside>
+  <footer class="slide-footer"><span></span><span>44 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-sulyok" aria-labelledby="mini-sulyok-title">
+  <header class="slide-header">
+    <p class="eyebrow">07 / Függelék</p>
+    <h2 class="slide-title" id="mini-sulyok-title" tabindex="-1">A mini-GPT minden súlya egy helyen</h2>
+    <p class="lead">A szótári sorrend A, ␣macska, ␣ül, ␣alszik, EOS. A normálás és az egy fej kimeneti vetítése identitás.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><section class="card tint"><h3>Bemenet és blokk</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">Elem</th><th scope="col">Érték</th></tr></thead><tbody><tr><td>E sorai</td><td>(0;1), (0,75;0), (0;1), (0;0), (0;0)</td></tr><tr><td>P sorai</td><td>(0;0), (0,25;0), (0;0)</td></tr><tr><td>W<sub>Q</sub> oszlopa</td><td>(1;0)</td></tr><tr><td>W<sub>K</sub> oszlopa</td><td>(ln 3;0)</td></tr><tr><td>W<sub>V</sub></td><td>diag(2;4)</td></tr><tr><td>MLP</td><td>g = ReLU(y₁ − 2y₂), kimenet (0; 2g)</td></tr></tbody></table></div></section><section class="card result"><h3>Kimeneti fej</h3><div class="table-wrap"><table class="data-table "><thead><tr><th scope="col">Token</th><th scope="col">W sora</th><th scope="col">Eltolás</th></tr></thead><tbody><tr><td><span class="token ">A</span></td><td>(0;0)</td><td>0</td></tr><tr><td><span class="token ">␣macska</span></td><td>(0;0)</td><td>0</td></tr><tr class="highlight"><td><span class="token ">␣ül</span></td><td>(⅖ ln 4;0)</td><td>0</td></tr><tr><td><span class="token ">␣alszik</span></td><td>(⅖ ln 2;0)</td><td>0</td></tr><tr><td><span class="token ">EOS</span></td><td>(0; ln 2)</td><td>−2 ln 2</td></tr></tbody></table></div><p class="small">A kézi SGD-lépés az „ül” sor első komponenséhez ad 5/36-ot.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A P tábla három bemeneti pozícióig definiált. A tanítósor végén az EOS a harmadik pozíció célja. A példafuttatás az EOS kiválasztásakor megáll, így nincs szükség negyedik pozícióvektorra.</p></aside>
+  <footer class="slide-footer"><span></span><span>45 / 47</span></footer>
+</section>
+
+<section class="slide" id="mini-kod" aria-labelledby="mini-kod-title">
+  <header class="slide-header">
+    <p class="eyebrow">07 / Függelék</p>
+    <h2 class="slide-title" id="mini-kod-title" tabindex="-1">A számítás futtatható Pythonban</h2>
+    <p class="lead">A példa a Python standard könyvtárát használja. Másold a kódot mini_gpt.py néven, majd futtasd.</p>
+  </header>
+  <div class="slide-body"><div class="choices script-only">
+      <button class="lab-button action" type="button" id="copy-python">Python-kód másolása</button>
+      <p class="small" id="copy-result" aria-live="polite"></p>
+    </div>
+    <pre class="code-box" tabindex="0"><code id="python-code">&quot;&quot;&quot;A diasor kis GPT-je. Futtatás: python3 mini_gpt.py&quot;&quot;&quot;
+from math import exp, log
+
+TOKENS = (&quot;A&quot;, &quot; macska&quot;, &quot; ül&quot;, &quot; alszik&quot;, &quot;&lt;EOS&gt;&quot;)
+EMBEDDINGS = ((0, 1), (0.75, 0), (0, 1), (0, 0), (0, 0))
+POSITIONS = ((0, 0), (0.25, 0), (0, 0))
+W_UL = 0.4 * log(4)
+
+
+def softmax(scores):
+    peak = max(scores)
+    exp_scores = [exp(s - peak) for s in scores]
+    return [s / sum(exp_scores) for s in exp_scores]
+
+
+def forward(ids, w_ul=W_UL, w_value_x=2, w_key=log(3)):
+    x = [
+        tuple(e + p for e, p in zip(EMBEDDINGS[t], POSITIONS[i]))
+        for i, t in enumerate(ids)
+    ]
+    q = [a for a, b in x]
+    k = [w_key * a for a, b in x]
+    v = [(w_value_x * a, 4 * b) for a, b in x]
+
+    positions = []
+    for i in range(len(x)):
+        # Az i. sorban csak az i-ig terjedő pontszámokat vesszük figyelembe.
+        scores = [q[i] * k[j] for j in range(i + 1)]
+        weights = softmax(scores)
+        attention = tuple(
+            sum(w * v[j][d] for j, w in enumerate(weights)) for d in range(2)
+        )
+        y = tuple(a + b for a, b in zip(x[i], attention))
+        g = max(0, y[0] - 2 * y[1])
+        h = (y[0], y[1] + 2 * g)
+        logits = (0, 0, w_ul * h[0], 0.4 * log(2) * h[0], log(2) * (h[1] - 2))
+        positions.append({
+            &quot;x&quot;: x[i], &quot;q&quot;: q[i], &quot;k&quot;: k[i], &quot;v&quot;: v[i],
+            &quot;scores&quot;: scores, &quot;weights&quot;: weights, &quot;attention&quot;: attention,
+            &quot;y&quot;: y, &quot;g&quot;: g, &quot;h&quot;: h, &quot;logits&quot;: logits, &quot;p&quot;: softmax(logits),
+        })
+    return positions
+
+
+def update(w_ul=W_UL, learning_rate=0.1):
+    row = forward([0, 1], w_ul=w_ul)[1]
+    grad = (row[&quot;p&quot;][2] - 1) * row[&quot;h&quot;][0]
+    return w_ul - learning_rate * grad
+
+
+if __name__ == &quot;__main__&quot;:
+    targets = [1, 2, 4]
+    rows = forward([0, 1, 2])
+    for i, (row, target) in enumerate(zip(rows, targets), 1):
+        print(i, row, &quot;loss =&quot;, -log(row[&quot;p&quot;][target]))
+
+    w_new = update()
+    print(&quot;SGD:&quot;, W_UL, &quot;→&quot;, w_new)
+    ids = [0, 1]
+    while len(ids) &lt;= len(POSITIONS):
+        probabilities = forward(ids, w_ul=w_new)[-1][&quot;p&quot;]
+        next_id = max(range(len(TOKENS)), key=probabilities.__getitem__)
+        print(&quot;Greedy:&quot;, repr(TOKENS[next_id]), &quot;p =&quot;, probabilities[next_id])
+        if next_id == 4:
+            break
+        ids.append(next_id)
+</code></pre>
+    <div class="formula">python3 mini_gpt.py<span class="comment">Kiírja mindhárom pozíciót, az SGD-lépést és a két greedy választást.</span></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A forward függvénynek add át az [0,1] ID-sort az első két pozícióhoz. A w_key=-log(3) argumentum ugyanazt a változást okozza, mint az 1. feladat. A w_value_x argumentum apró változtatásával a V súlyra vezetett gradiens véges differenciával ellenőrizhető.</p></aside>
+  <footer class="slide-footer"><span></span><span>46 / 47</span></footer>
+</section>
+
+<section class="slide" id="fogalomtar" aria-labelledby="fogalomtar-title">
+  <header class="slide-header">
+    <p class="eyebrow">07 / Függelék</p>
+    <h2 class="slide-title" id="fogalomtar-title" tabindex="-1">Fogalomtár</h2>
+    <p class="lead">A jelölések gyors visszakereséséhez az előadás és a számolások közben.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table " aria-label="Az előadás fő fogalmai"><thead><tr><th scope="col">Fogalom</th><th scope="col">Jelentés az anyagban</th></tr></thead><tbody><tr><td>Token / ID</td><td>A szótár egy darabja és az ahhoz rendelt egész szám.</td></tr><tr><td>Embedding / rejtett állapot</td><td>Kezdeti vektor / egy réteg kontextusfüggő vektora.</td></tr><tr><td>Q, K, V</td><td>Illesztéshez használt query és key, illetve a súlyozott value.</td></tr><tr><td>Logit / softmax</td><td>Nyers pontszám / eloszlássá normalizáló függvény.</td></tr><tr><td>Loss / gradiens</td><td>A modell jóslatának vesztesége / a veszteség érzékenysége egy változóra.</td></tr><tr><td>SFT / RLHF / DPO</td><td>Mintaválaszos finomhangolás / megerősítéses tanulás emberi visszajelzésből / közvetlen preferenciaoptimalizálás.</td></tr><tr><td>Prefill / decode / EOS</td><td>A prompt feldolgozása / új tokenek léptetése / szekvenciavége.</td></tr></tbody></table></div></div>
+  <aside class="speaker-notes"><h3>Előadói jegyzet</h3><p>A felső Tartalom gombbal visszaugorhatsz bármelyik fogalom részletes diájára. A hivatkozások böngészéséhez internetkapcsolat kell, az anyag és a beépített gyakorlatok helyben futnak.</p></aside>
+  <footer class="slide-footer"><span></span><span>47 / 47</span></footer>
+</section>
+
+</main>
+<nav class="nav" aria-label="Diák lapozása">
+  <div class="nav-actions">
+    <button class="control" type="button" id="previous">← Előző</button>
+    <button class="control primary" type="button" id="next">Következő →</button>
+  </div>
+  <div class="progress" aria-hidden="true"><div id="progress-fill"></div></div>
+  <p class="counter" id="counter" aria-live="polite"></p>
+</nav>
+<p class="keyboard-help script-only">Lapozás a nyilakkal · Home az első, End az utolsó diára ugrik</p>
+<dialog class="dialog" id="contents-dialog" aria-labelledby="contents-title">
+  <header class="dialog-head"><h2 id="contents-title">Tartalom</h2><form method="dialog"><button class="control">Bezárás</button></form></header>
+  <div class="dialog-body"><section class="toc-section"><h3>Kezdés</h3><ol><li><a href="#kezdes"><span>01</span>Hogyan működik egy LLM?</a></li><li><a href="#celok"><span>02</span>Mit tudsz a végére kiszámolni?</a></li></ol></section><section class="toc-section"><h3>Szöveg és tokenek</h3><ol><li><a href="#token-elso"><span>03</span>A modell a következő token eloszlását adja</a></li><li><a href="#tokenizer"><span>04</span>A tokenizer karakterekből token-ID-ket készít</a></li><li><a href="#bpe"><span>05</span>A BPE gyakori szomszédokat von össze</a></li><li><a href="#embedding"><span>06</span>Az ID-ból vektor lesz, a sorrend pedig információ</a></li></ol></section><section class="toc-section"><h3>Transformer és attention</h3><ol><li><a href="#eredeti-transformer"><span>07</span>Az eredeti Transformer egy fordítómodell volt</a></li><li><a href="#architekturak"><span>08</span>A Transformer felépítését a feladathoz választjuk</a></li><li><a href="#gpt-adatfolyam"><span>09</span>A GPT adatfolyama a tokentől a logitig</a></li><li><a href="#mi-az-attention"><span>10</span>Mi az attention, és miért fontos?</a></li><li><a href="#oksagi-maszk"><span>11</span>Az oksági maszk kizárja a jövőbeli pozíciókat</a></li><li><a href="#qkv"><span>12</span>Q, K és V szerepe a figyelmi fejben</a></li><li><a href="#tobbfeju"><span>13</span>Több figyelmi fej párhuzamosan kever információt</a></li><li><a href="#gpt-blokk"><span>14</span>Egy GPT-blokkban az attention és az MLP együtt dolgozik</a></li></ol></section><section class="toc-section"><h3>Mini-GPT számolás</h3><ol><li><a href="#mini-gpt"><span>15</span>A mini-GPT teljes bemenete</a></li><li><a href="#mini-qkv"><span>16</span>1. lépés · Kiszámoljuk a Q, K és V vektorokat</a></li><li><a href="#mini-softmax"><span>17</span>2. lépés · Pontszámból figyelmi súly lesz</a></li><li><a href="#mini-value"><span>18</span>3. lépés · A V vektorokból keveréket készítünk</a></li><li><a href="#attention-labor"><span>19</span>Attention-labor · Változtasd meg a súlyokat</a></li><li><a href="#mini-mlp"><span>20</span>4. lépés · Az MLP továbbalakítja az állapotot</a></li><li><a href="#mini-logit"><span>21</span>5. lépés · A kimeneti réteg logitokat számol</a></li><li><a href="#mini-eloszlas"><span>22</span>6. lépés · Az öt logitból tokeneloszlás lesz</a></li></ol></section><section class="toc-section"><h3>Tanítás és utótanítás</h3><ol><li><a href="#adatok"><span>23</span>A tanítókorpusz minősége része a modellnek</a></li><li><a href="#teacher-forcing"><span>24</span>A tanítószöveg egy hellyel eltolva adja a célokat</a></li><li><a href="#keresztentropia"><span>25</span>A keresztentrópia a céltoken esélyét méri</a></li><li><a href="#sgd"><span>26</span>Egy súlyfrissítést kézzel is kiszámolhatunk</a></li><li><a href="#backprop"><span>27</span>A gradiens az attention súlyaiig is eljut</a></li><li><a href="#tanitasi-ciklus"><span>28</span>A nagy modell ugyanezt a ciklust ismétli</a></li><li><a href="#sft"><span>29</span>Az utótanítás első lépése lehet az SFT</a></li><li><a href="#preferencia"><span>30</span>A preferenciaadat két válasz közül választ</a></li><li><a href="#valos-trening"><span>31</span>Llama 3 · hogyan néz ki mindez egy valós tréningben?</a></li></ol></section><section class="toc-section"><h3>Generálás és futtatás</h3><ol><li><a href="#generalas"><span>32</span>A generálás visszafűzi a saját választását</a></li><li><a href="#dekodolas"><span>33</span>A dekódolás dönt az eloszlás alapján</a></li><li><a href="#dekodolo-labor"><span>34</span>Dekódoló labor · Hogyan változik a folytatás esélye?</a></li><li><a href="#kv-cache"><span>35</span>A KV-cache elkerüli a régi K és V újraszámítását</a></li><li><a href="#koltseg"><span>36</span>A hosszabb kontextus számítást és memóriát kér</a></li><li><a href="#kontextusablak"><span>37</span>Hol van az információ futtatás közben?</a></li><li><a href="#megertes"><span>38</span>Hogyan függ a token jelentése a kontextustól?</a></li></ol></section><section class="toc-section"><h3>Gyakorlás és források</h3><ol><li><a href="#feladat-attention"><span>39</span>Feladat 1 · Mi történik, ha a második key gyengül?</a></li><li><a href="#feladat-gradiens"><span>40</span>Feladat 2 · Mi lenne, ha „alszik” volna a cél?</a></li><li><a href="#feladat-dekodolas"><span>41</span>Feladat 3 · Melyik token marad a mintavételben?</a></li><li><a href="#osszefugges"><span>42</span>Kövesd végig, mi változik a két műveletben</a></li><li><a href="#oktatoanyagok"><span>43</span>Oktatóanyagok további tanuláshoz</a></li><li><a href="#tanulmanyok"><span>44</span>Elsődleges források fejezetenként</a></li></ol></section><section class="toc-section"><h3>Függelék</h3><ol><li><a href="#mini-sulyok"><span>45</span>A mini-GPT minden súlya egy helyen</a></li><li><a href="#mini-kod"><span>46</span>A számítás futtatható Pythonban</a></li><li><a href="#fogalomtar"><span>47</span>Fogalomtár</a></li></ol></section></div>
+</dialog>
+<dialog class="dialog" id="notes-dialog" aria-labelledby="notes-title">
+  <header class="dialog-head"><h2 id="notes-title">Előadói jegyzet</h2><form method="dialog"><button class="control">Bezárás</button></form></header>
+  <div class="dialog-body" id="notes-content"></div>
+</dialog>
+<script id="model-data" type="application/json">{"baseLogits": [0, 0, 1.3862943611198906, 0.6931471805599453, 0.0], "updatedLogits": [[0, 0, 1.733516583342113, 0.6931471805599453, 0.0], [0, 0, 0.4622710888912301, 0.18483924814931874, 1.155245300933242]], "tokenNames": ["A", "␣macska", "␣ül", "␣alszik", "EOS"]}</script>
+<script>(() => {
+  'use strict';
+
+  const slides = Array.from(document.querySelectorAll('.stage > .slide'));
+  const indexById = new Map(slides.map((slide, index) => [slide.id, index]));
+  const toc = document.getElementById('contents-dialog');
+  const notes = document.getElementById('notes-dialog');
+  const notesContent = document.getElementById('notes-content');
+  const openNotes = document.getElementById('open-notes');
+  const previous = document.getElementById('previous');
+  const next = document.getElementById('next');
+  const progress = document.getElementById('progress-fill');
+  const counter = document.getElementById('counter');
+  const fullscreen = document.getElementById('fullscreen');
+  const number = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 3 });
+  const decimal2 = new Intl.NumberFormat('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const percentNumber = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 1 });
+  const percent = value => percentNumber.format(value * 100) + '%';
+  const vector = values => '(' + values.map(n => number.format(n)).join('; ') + ')';
+  const data = JSON.parse(document.getElementById('model-data').textContent);
+  let active = 0;
+
+  function showSlide(index, { record = true, focus = false } = {}) {
+    if (index < 0 || index >= slides.length) return;
+    const oldSlide = slides[active];
+    oldSlide.classList.remove('active');
+    active = index;
+    const slide = slides[active];
+    slide.classList.add('active');
+    slide.scrollTop = 0;
+    if (window.scrollY > 0) window.scrollTo(0, 0);
+
+    const hash = '#' + slide.id;
+    if (record && location.hash !== hash) history.pushState(null, '', hash);
+    previous.disabled = active === 0;
+    next.disabled = active === slides.length - 1;
+    openNotes.disabled = !slide.querySelector('.speaker-notes');
+    counter.textContent = (active + 1) + ' / ' + slides.length;
+    counter.setAttribute('aria-label', (active + 1) + '. dia, összesen ' + slides.length + ' dia');
+    progress.style.width = ((active + 1) / slides.length * 100) + '%';
+
+    toc.querySelector('[aria-current]')?.removeAttribute('aria-current');
+    const entry = toc.querySelector('a[href="' + hash + '"]');
+    entry?.setAttribute('aria-current', 'page');
+    if (focus) slide.querySelector('.slide-title').focus({ preventScroll: true });
+  }
+
+  function followHash() {
+    const target = indexById.get(location.hash.slice(1));
+    showSlide(target === undefined ? 0 : target, { record: false });
+  }
+
+  document.documentElement.classList.add('enhanced');
+  followHash();
+  window.addEventListener('popstate', followHash);
+  window.addEventListener('hashchange', () => {
+    if (indexById.has(location.hash.slice(1))) followHash();
+  });
+  previous.addEventListener('click', () => showSlide(active - 1));
+  next.addEventListener('click', () => showSlide(active + 1));
+
+  document.addEventListener('click', event => {
+    const anchor = event.target.closest('a[href^="#"]');
+    const target = anchor && indexById.get(anchor.hash.slice(1));
+    if (target === null || target === undefined || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (toc.open) toc.close();
+    showSlide(target, { focus: true });
+  });
+
+  document.getElementById('open-toc').addEventListener('click', () => {
+    toc.showModal();
+    toc.querySelector('[aria-current]')?.scrollIntoView({ block: 'center' });
+  });
+  openNotes.addEventListener('click', () => {
+    const source = slides[active].querySelector('.speaker-notes');
+    if (!source) return;
+    document.getElementById('notes-title').textContent =
+      'Előadói jegyzet · ' + slides[active].querySelector('.slide-title').textContent;
+    notesContent.replaceChildren(...Array.from(source.children).slice(1).map(node => node.cloneNode(true)));
+    notes.showModal();
+    notes.scrollTop = 0;
+  });
+
+  if (!document.fullscreenEnabled) fullscreen.hidden = true;
+  fullscreen.addEventListener('click', async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      fullscreen.hidden = true;
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const enabled = Boolean(document.fullscreenElement);
+    fullscreen.setAttribute('aria-pressed', String(enabled));
+    fullscreen.textContent = enabled ? 'Kilépés a teljes képernyőből' : 'Teljes képernyő';
+  });
+
+  document.addEventListener('keydown', event => {
+    if (toc.open || notes.open || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.target.closest('input, textarea, select, summary, .code-box, [contenteditable="true"]')) return;
+    let target;
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'PageDown':
+        target = Math.min(active + 1, slides.length - 1);
+        break;
+      case 'ArrowLeft':
+      case 'PageUp':
+        target = Math.max(active - 1, 0);
+        break;
+      case 'Home':
+        target = 0;
+        break;
+      case 'End':
+        target = slides.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    if (target !== active) showSlide(target, { focus: true });
+  });
+
+  function softmax(logits) {
+    const max = Math.max(...logits);
+    const weights = logits.map(value => Math.exp(value - max));
+    const total = weights.reduce((sum, value) => sum + value, 0);
+    return weights.map(value => value / total);
+  }
+
+  function initAttention() {
+    const lab = document.querySelector('[data-lab="attention"]');
+    const queryButtons = Array.from(lab.querySelectorAll('[data-query]'));
+    const keyButtons = Array.from(lab.querySelectorAll('[data-key]'));
+    let query = 1;
+    let keySign = 1;
+
+    function updateAttention() {
+      const scores = [0, query === 0 ? -Infinity : keySign * Math.log(3)];
+      const weights = softmax(scores);
+      const products = [[0, 4 * weights[0]], [2 * weights[1], 0]];
+      const scoreLabel = query === 0 ? '−∞ (maszkolt)' : ({ '-1': '−ln 3', '0': '0', '1': 'ln 3' })[keySign];
+
+      queryButtons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.query) === query)));
+      keyButtons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.key) === keySign)));
+      lab.querySelector('[data-score="1"]').textContent = scoreLabel;
+      weights.forEach((weight, index) => {
+        lab.querySelector('[data-weight="' + index + '"]').textContent = percent(weight);
+        lab.querySelector('[data-product="' + index + '"]').textContent = vector(products[index]);
+      });
+      const output = [products[1][0], products[0][1]];
+      lab.querySelector('[data-attn-result]').textContent = 'Súlyozott összeg a = ' + vector(output);
+    }
+
+    queryButtons.forEach(button => button.addEventListener('click', () => {
+      query = Number(button.dataset.query);
+      updateAttention();
+    }));
+    keyButtons.forEach(button => button.addEventListener('click', () => {
+      keySign = Number(button.dataset.key);
+      updateAttention();
+    }));
+  }
+
+  function initGeneration() {
+    const lab = document.querySelector('[data-lab="generation"]');
+    const prefix = lab.querySelector('[data-prefix]');
+    const initialPrefix = prefix.cloneNode(true);
+    const stepButton = lab.querySelector('[data-decode-step]');
+    const result = lab.querySelector('[data-generation-result]');
+    const initial = result.textContent;
+    let step = 0;
+    stepButton.addEventListener('click', () => {
+      if (step >= data.updatedLogits.length) return;
+      const probabilities = softmax(data.updatedLogits[step]);
+      const selected = probabilities.indexOf(Math.max(...probabilities));
+      const chip = document.createElement('span');
+      chip.className = selected === 4 ? 'token stop' : 'token target';
+      chip.textContent = data.tokenNames[selected];
+      prefix.append(chip);
+      step += 1;
+      if (selected === 4 || step >= data.updatedLogits.length) {
+        stepButton.disabled = true;
+        result.textContent = 'EOS · ' + percent(probabilities[selected]) + '. A generálás véget ért.';
+      } else {
+        result.textContent = 'Hozzáfűzve: ' + data.tokenNames[selected] + ' · ' + percent(probabilities[selected]) + '.';
+      }
+    });
+    lab.querySelector('[data-decode-reset]').addEventListener('click', () => {
+      step = 0;
+      prefix.replaceChildren(...Array.from(initialPrefix.children).map(node => node.cloneNode(true)));
+      result.textContent = initial;
+      stepButton.disabled = false;
+    });
+  }
+
+  function initDecoding() {
+    const lab = document.querySelector('[data-lab="decoding"]');
+    const temperature = lab.querySelector('[data-temperature]');
+    const topP = lab.querySelector('[data-top-p]');
+    const output = lab.querySelector('[data-sample-result]');
+    const initial = output.textContent;
+    let filtered = [];
+
+    function updateDistribution() {
+      const tau = Number(temperature.value);
+      const threshold = Number(topP.value);
+      lab.querySelector('[data-temperature-readout]').textContent = decimal2.format(tau);
+      lab.querySelector('[data-top-p-readout]').textContent = decimal2.format(threshold);
+
+      const probabilities = softmax(data.baseLogits.map(logit => logit / tau));
+      const ordered = probabilities.map((p, i) => ({ p, i })).sort((a, b) => b.p - a.p);
+      const kept = new Set();
+      let total = 0;
+      for (const { p, i } of ordered) {
+        kept.add(i);
+        total += p;
+        if (total + 1e-12 >= threshold) break;
+      }
+      filtered = probabilities.map((p, i) => kept.has(i) ? p / total : 0);
+
+      const max = Math.max(...filtered);
+      filtered.forEach((p, i) => {
+        const row = lab.querySelector('[data-bar-row="' + i + '"]');
+        row.querySelector('.bar').style.width = (p * 100) + '%';
+        row.querySelector('.bar-value').textContent = percent(p);
+        row.classList.toggle('leading', p === max);
+      });
+      output.textContent = initial;
+    }
+
+    temperature.addEventListener('input', updateDistribution);
+    topP.addEventListener('input', updateDistribution);
+    lab.querySelector('[data-decode-default]').addEventListener('click', () => {
+      temperature.value = '1';
+      topP.value = '1';
+      updateDistribution();
+    });
+    lab.querySelector('[data-sample]').addEventListener('click', () => {
+      let rest = Math.random();
+      let chosen = filtered.findLastIndex(p => p > 0);
+      for (let i = 0; i < filtered.length; i++) {
+        rest -= filtered[i];
+        if (rest < 0) {
+          chosen = i;
+          break;
+        }
+      }
+      output.textContent = 'Kihúzott token: ' + data.tokenNames[chosen] + ' · ' + percent(filtered[chosen]) + '.';
+    });
+    updateDistribution();
+  }
+
+  async function copyPython() {
+    const code = document.getElementById('python-code');
+    const result = document.getElementById('copy-result');
+    try {
+      await navigator.clipboard.writeText(code.textContent);
+      result.textContent = 'A kód a vágólapra került.';
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      result.textContent = 'A kód kijelölve. Másolás: Ctrl+C vagy ⌘C.';
+    }
+  }
+
+  initAttention();
+  initGeneration();
+  initDecoding();
+  document.getElementById('copy-python').addEventListener('click', copyPython);
+})();
+</script>
+</body>
+</html>
