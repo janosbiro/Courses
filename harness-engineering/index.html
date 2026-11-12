@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Magyar HTML-tananyag a harness engineeringről, a Claude Code, Codex és Pi coding harnessről és a harness méréséről.">
+<title>Harness engineering · Courses</title>
+<style>:root {
+  color-scheme: light;
+  --ink: #182a3c;
+  --muted: #4d5b65;
+  --navy: #173b60;
+  --navy-deep: #152f4b;
+  --blue-paper: #e7eef4;
+  --paper: #fcfbf7;
+  --surround: #e9edf0;
+  --rule: #c4cdd2;
+  --teal: #12665e;
+  --teal-paper: #e3f1ed;
+  --amber: #f2e2b9;
+  --amber-ink: #65460a;
+  --sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "STIX Two Text", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--surround); font: 1rem/1.45 var(--sans); }
+button, input { font: inherit; }
+button { color: inherit; cursor: pointer; }
+button[disabled] { opacity: .45; cursor: default; }
+a { color: var(--navy); text-underline-offset: .17em; }
+:focus-visible { outline: 3px solid #a76b07; outline-offset: 4px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p, ul, ol, figure { margin: 0; }
+sub, sup { line-height: 0; }
+code { font-family: var(--mono); font-size: .9em; }
+.skip { position: fixed; top: .5rem; left: .5rem; z-index: 20; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; background: var(--paper); padding: .7rem; }
+.skip:focus { clip-path: none; width: auto; height: auto; overflow: visible; }
+
+.shell {
+  min-height: 58px;
+  border-bottom: 1px solid #ced7de;
+  background: var(--paper);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .85rem;
+  padding: .55rem clamp(1rem, 3vw, 3rem);
+}
+.brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.shell-actions, .nav-actions { display: flex; align-items: center; gap: .48rem; }
+.control {
+  padding: .4rem .75rem;
+  min-height: 38px;
+  border: 1px solid #aab8c4;
+  border-radius: 5px;
+  background: var(--paper);
+  font-weight: 580;
+  font-size: .89rem;
+  white-space: nowrap;
+}
+.control:hover:not([disabled]) { background: var(--blue-paper); }
+.control[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: white; }
+.control[aria-pressed="true"]:hover { background: #0c5049; }
+.control.primary { background: var(--navy); border-color: var(--navy); color: white; }
+.control.primary:hover:not([disabled]) { background: var(--navy-deep); }
+
+.stage {
+  width: min(calc(100% - 2.6rem), 89rem, calc((100dvh - 8.7rem) * 16 / 9));
+  margin: 1rem auto 0;
+  container-type: inline-size;
+}
+.enhanced .stage { aspect-ratio: 16 / 9; }
+.slide {
+  width: 100%;
+  min-height: 56.25cqw;
+  padding: 3.35cqw 4.5cqw 2.35cqw;
+  background: var(--paper);
+  border-top: .54cqw solid var(--navy);
+  border-left: 1px solid #d3dce1;
+  border-right: 1px solid #d3dce1;
+  border-bottom: 1px solid #d3dce1;
+  box-shadow: 0 6px 22px #1b344913;
+  display: flex;
+  flex-direction: column;
+  gap: 2.05cqw;
+  font-size: 1.73cqw;
+  line-height: 1.34;
+  overflow-wrap: break-word;
+}
+.enhanced .slide { height: 100%; overflow: auto; }
+.enhanced .slide:not(.active) { display: none; }
+.slide-title:focus { outline: none; }
+.slide-title:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+.eyebrow {
+  margin-bottom: .78cqw;
+  color: var(--teal);
+  font-size: 1.14cqw;
+  line-height: 1.15;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  font-weight: 760;
+}
+.slide h1, .slide h2 {
+  font: 600 4.15cqw/1.02 var(--serif);
+  letter-spacing: -.026em;
+}
+.slide h2.compact-title { font-size: 3.64cqw; }
+.lead { margin-top: .78cqw; max-width: 87cqw; font-size: 1.78cqw; line-height: 1.31; color: var(--muted); }
+.slide-body { display: grid; gap: 1.45cqw; align-content: start; }
+.slide-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--rule);
+  padding-top: .72cqw;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.2cqw;
+  font-size: 1.02cqw;
+  line-height: 1.23;
+  color: var(--muted);
+}
+.slide-footer > span:last-child { flex-shrink: 0; }
+.guided .slide-footer > span:last-child { display: none; }
+.speaker-notes { display: none; }
+html:not(.enhanced) .speaker-notes { display: block; }
+html:not(.enhanced) .script-only, html:not(.enhanced) .nav { display: none; }
+html:not(.enhanced) .stage { width: min(calc(100% - 2rem), 90rem); }
+html:not(.enhanced) .slide { margin-bottom: 1rem; }
+.label { font-size: 1.16cqw; font-weight: 750; color: var(--teal); text-transform: uppercase; letter-spacing: .07em; }
+.small { font-size: 1.43cqw; line-height: 1.3; }
+.muted { color: var(--muted); }
+.accent-text { color: var(--teal); }
+.no-break { white-space: nowrap; }
+.prose-stack > * + * { margin-top: .8cqw; }
+.list { padding-left: 1.23em; }
+.list li + li { margin-top: .38em; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.6cqw; align-items: start; }
+.cols.wide-left { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.cols.wide-right { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.cols.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols.stretch { align-items: stretch; }
+.card { border: 1px solid var(--rule); background: #fffefa; padding: 1.48cqw 1.65cqw; min-width: 0; border-radius: 4px; }
+.card.tint { background: var(--blue-paper); border-color: #b9c9d8; }
+.card.signal { background: var(--teal-paper); border-color: #a9cac4; }
+.card.result { background: #f8edce; border-color: #d7bf83; }
+.card.dark { background: var(--navy-deep); border-color: var(--navy-deep); color: white; }
+.card.dark .label { color: #a6e1d7; }
+.card h3, .subhead { font: 650 2.15cqw/1.11 var(--serif); letter-spacing: -.01em; }
+.card h3 + *, .card .label + * { margin-top: .65cqw; }
+.card p + p { margin-top: .65cqw; }
+.callout { border-left: .34cqw solid var(--teal); background: var(--teal-paper); padding: .88cqw 1.15cqw; border-radius: 0 4px 4px 0; }
+.callout.gold { border-color: #a67922; background: #f8edce; }
+.formula {
+  background: var(--blue-paper);
+  border: 1px solid #c3d1dc;
+  border-radius: 4px;
+  padding: .85cqw 1.15cqw;
+  font: 500 2.07cqw/1.25 var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.formula.large { font-size: 2.8cqw; }
+.formula .comment { display: block; color: var(--muted); font: 1.28cqw/1.28 var(--sans); margin-top: .24cqw; }
+.formula + .formula { margin-top: .66cqw; }
+.nums { font-variant-numeric: tabular-nums; }
+.metric { color: var(--navy-deep); font: 650 3.35cqw/1.04 var(--serif); letter-spacing: -.025em; }
+.token { display: inline-block; padding: .12em .34em; border-radius: 4px; border: 1px solid #bbcad6; background: var(--blue-paper); color: var(--navy-deep); font: .9em/1.25 var(--mono); white-space: nowrap; }
+.token.target { background: var(--amber); border-color: #cfb271; color: #45310a; }
+.token.stop { background: var(--teal-paper); border-color: #abd0c5; color: #164842; }
+.token-lane { display: flex; flex-wrap: wrap; align-items: center; gap: .45em; }
+.arrow { color: var(--teal); font: 650 1.32em/1 var(--sans); }
+.flow { display: flex; align-items: stretch; gap: .65cqw; }
+.flow > .arrow { align-self: center; flex: 0 0 auto; }
+.flow-step { flex: 1 1 0; min-width: 0; padding: 1.12cqw 1.12cqw; background: var(--blue-paper); border: 1px solid #bbcbd8; border-radius: 4px; }
+.flow-step:last-child { background: var(--teal-paper); border-color: #adc9c2; }
+.flow-step > strong { display: block; font: 650 1.9cqw/1.15 var(--serif); }
+.flow-step > span { display: block; font-size: 1.35cqw; line-height: 1.3; margin-top: .32cqw; }
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 1.55cqw; font-variant-numeric: tabular-nums; text-align: left; }
+.data-table th, .data-table td { padding: .62cqw .83cqw; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.data-table thead th { background: var(--navy); color: #fff; font-size: 1.32cqw; line-height: 1.22; font-weight: 650; }
+.data-table tbody tr:nth-child(2n) { background: #edf1f3; }
+.data-table tbody tr.highlight { background: #f8eac6; font-weight: 630; }
+.data-table .center { text-align: center; }
+.data-table .allow { background: var(--teal-paper); color: #11453d; }
+.data-table .mask { background: #e8eaec; color: #555e63; }
+.data-table .rowhead { font-weight: 650; }
+.seq-matrix { font-size: 1.55cqw; }
+.seq-matrix th, .seq-matrix td { padding: .57cqw .63cqw; }
+.steps { display: grid; gap: .7cqw; }
+.calc-step { border-bottom: 1px solid var(--rule); padding: .24cqw 0 .65cqw; }
+.calc-step .label { color: var(--muted); }
+.calc-step .mathline { margin-top: .24cqw; font: 600 2.05cqw/1.2 var(--serif); }
+.calc-step:last-child { border-bottom: 0; }
+.caption { margin-top: .52cqw; color: var(--muted); font-size: 1.25cqw; line-height: 1.28; }
+.branch { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.1cqw; align-items: center; }
+.translator { display: grid; grid-template-columns: minmax(0, 1fr) 9cqw minmax(0, 1fr); gap: 1.4cqw; align-items: stretch; }
+.translator-bridge { align-self: center; text-align: center; color: var(--teal); }
+.translator-bridge .arrow { display: block; font-size: 2.6cqw; }
+.translator .token-lane { margin: .7cqw 0; }
+.distance { display: grid; gap: .75cqw; }
+.distance-sentence { display: grid; grid-template-columns: max-content max-content max-content; gap: .2em .24em; justify-self: start; font: 600 2.26cqw/1.26 var(--serif); }
+.link-line { grid-column: 1 / -1; height: 1.3cqw; margin: 0 3.1em 0 3.15em; border: .18cqw solid var(--teal); border-top: 0; border-radius: 0 0 10px 10px; position: relative; }
+.link-line::after { content: ""; position: absolute; right: -.42cqw; top: -.1cqw; width: .62cqw; height: .62cqw; border-right: .17cqw solid var(--teal); border-top: .17cqw solid var(--teal); transform: rotate(-45deg); }
+mark { background: var(--amber); color: var(--ink); padding: 0 .15em; border-radius: 2px; }
+.token-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .66cqw; }
+.token-grid .card { padding: .95cqw; }
+.token-grid .token { margin-top: .33cqw; }
+
+.cover { border-color: var(--navy-deep); background: var(--navy-deep); color: #fcfbf7; padding-top: 4.3cqw; }
+.cover .eyebrow, .cover .label { color: #a9ddd6; }
+.cover .slide-body { flex: 1; }
+.cover h1 { font-size: 6.3cqw; line-height: .99; max-width: 60cqw; }
+.cover .slide-header { margin-bottom: .35cqw; }
+.cover .lead { color: #dbe6ec; max-width: 67cqw; font-size: 2.05cqw; }
+.cover-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 2.6cqw; align-items: center; }
+.cover-path { display: grid; grid-template-columns: 1fr 1fr; gap: .7cqw 1.2cqw; font-size: 1.44cqw; }
+.cover-path a { color: white; text-decoration: none; border-top: 1px solid #7290a8; padding-top: .48cqw; }
+.cover-path a:hover { text-decoration: underline; }
+.cover-path a span { color: #9ed8d1; margin-right: .35em; }
+.cover-figure { background: #f2f5f5; color: var(--ink); border-radius: 4px; padding: 1.4cqw; border-left: .5cqw solid #67b3a7; }
+.cover-figure .label { color: var(--teal); }
+.cover-figure .token-lane { margin: .6cqw 0; font-size: 1.82cqw; }
+.cover-figure .lab-button { margin-top: .7cqw; }
+.cover .slide-footer { color: #dbe6ec; border-color: #7290a8; }
+
+.nav {
+  width: min(calc(100% - 2.6rem), 89rem, calc((100dvh - 8.7rem) * 16 / 9));
+  margin: .65rem auto .55rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .8rem;
+}
+.progress { height: 5px; border-radius: 9px; background: #cbd6df; overflow: hidden; }
+.progress > div { height: 100%; background: var(--teal); }
+.counter { color: var(--muted); font-variant-numeric: tabular-nums; font-size: .9rem; white-space: nowrap; }
+.keyboard-help { font-size: .76rem; color: var(--muted); text-align: center; margin: 0 0 .4rem; }
+.dialog { border: 1px solid var(--rule); border-radius: 8px; padding: 0; color: var(--ink); background: var(--paper); width: min(94vw, 50rem); max-height: 82dvh; box-shadow: 0 22px 65px #152f4b48; }
+.dialog::backdrop { background: #162b40a6; }
+.dialog-head { position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 1rem 1.3rem; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.dialog-head h2 { font: 650 1.7rem/1.05 var(--serif); }
+.dialog-body { padding: 1.1rem 1.3rem 1.4rem; }
+.dialog-body p + p, .dialog-body ul + p { margin-top: .75rem; }
+.toc-section + .toc-section { margin-top: 1rem; }
+.toc-section h3 { font: 650 1.23rem/1.2 var(--serif); color: var(--teal); margin-bottom: .3rem; }
+.toc-section ol { list-style: none; padding: 0; }
+.toc-section a { display: grid; grid-template-columns: 2.1rem 1fr; align-items: baseline; gap: .4rem; padding: .37rem .45rem; border-radius: 3px; text-decoration: none; }
+.toc-section a:hover, .toc-section a[aria-current] { background: var(--blue-paper); }
+.toc-section a > span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+
+.lab { display: grid; gap: .85cqw; }
+.lab fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.lab legend { margin-bottom: .4cqw; font-size: 1.32cqw; font-weight: 650; }
+.choices { display: flex; flex-wrap: wrap; gap: .44cqw; }
+.choice, .lab-button { border: 1px solid #9faeba; border-radius: 4px; background: var(--paper); padding: .4cqw .72cqw; font-size: 1.32cqw; line-height: 1.23; min-height: 31px; }
+.choice[aria-pressed="true"], .lab-button.action { background: var(--navy); border-color: var(--navy); color: white; }
+.choice:hover:not([aria-pressed="true"]), .lab-button:hover:not(.action) { background: var(--blue-paper); }
+.lab-button.action:hover:not([disabled]) { background: var(--navy-deep); }
+.choice-group { display: flex; flex-wrap: wrap; gap: 1cqw 1.5cqw; align-items: end; }
+.range-control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .23cqw .6cqw; font-size: 1.36cqw; }
+.range-control input { grid-column: 1 / -1; width: 100%; accent-color: var(--teal); min-height: 25px; margin: 0; }
+.result-line { padding: .58cqw .75cqw; background: var(--teal-paper); border-radius: 4px; font-variant-numeric: tabular-nums; }
+.bars { display: grid; gap: .44cqw; font-variant-numeric: tabular-nums; }
+.bar-row { display: grid; grid-template-columns: 8cqw minmax(0, 1fr) 5.4cqw; align-items: center; gap: .62cqw; font-size: 1.4cqw; }
+.bar-row .token { justify-self: start; }
+.track { height: 1.12cqw; background: #dce4e8; border-radius: 2px; overflow: hidden; }
+.bar { height: 100%; background: var(--teal); min-width: 0; }
+.bar-row.leading .bar { background: var(--navy); }
+.bar-value { text-align: right; font-size: 1.35cqw; }
+.reveal { border: 1px solid #abc7c2; border-radius: 4px; background: var(--teal-paper); padding: .78cqw 1.05cqw; }
+.reveal summary { color: #194e47; font-weight: 650; cursor: pointer; }
+.reveal > :not(summary) { margin-top: .67cqw; }
+.reveal .formula { background: #f7fbfa; }
+.sources { display: grid; gap: .52cqw; }
+.source-row { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.5fr); gap: 1.35cqw; border-bottom: 1px solid var(--rule); padding-bottom: .5cqw; font-size: 1.43cqw; }
+.source-row a { font-weight: 620; }
+.vector-plot { position: relative; height: 13.3cqw; background: #f8fbfc; border: 1px solid var(--rule); border-radius: 4px; font-size: 1.32cqw; }
+.vector-plot span { position: absolute; }
+.axis-x { left: 11%; right: 10%; bottom: 22%; border-top: 1px solid #8396a3; }
+.axis-y { left: 11%; top: 13%; bottom: 22%; border-left: 1px solid #8396a3; }
+.plot-x { left: 11%; width: 44%; bottom: 22%; border-top: 3px solid var(--navy); }
+.plot-y { left: 55%; height: 43%; bottom: 22%; border-left: 3px solid var(--teal); }
+.plot-point { left: 55%; bottom: 65%; width: .75em; height: .75em; transform: translate(-50%,50%); border-radius: 50%; background: var(--teal); }
+.plot-origin { left: 6%; bottom: 6%; }
+.plot-x-label { left: 29%; bottom: 5%; color: var(--navy); }
+.plot-y-label { left: 59%; bottom: 38%; color: var(--teal); }
+.plot-total { left: 55%; bottom: 70%; font-weight: 650; }
+.code-box { font: 1.15cqw/1.37 var(--mono); white-space: pre; color: #ecf5fa; background: var(--navy-deep); border: 1px solid #344d63; border-radius: 5px; padding: .85cqw 1.05cqw; margin: 0; max-height: 20.8cqw; overflow: auto; tab-size: 4; }
+.code-box code { font-size: 1em; }
+
+:fullscreen body { background: var(--surround); }
+@media (max-width: 720px), (max-aspect-ratio: 1/1) {
+  .shell { flex-wrap: wrap; gap: .35rem; padding: .55rem .75rem; }
+  .brand { font-size: 1.15rem; }
+  .shell .control { font-size: .8rem; padding-inline: .48rem; min-height: 36px; }
+  #fullscreen, .keyboard-help { display: none; }
+  .stage, .nav { width: calc(100% - 1.05rem); }
+  .enhanced .stage { aspect-ratio: auto; }
+  .enhanced .slide { height: auto; overflow: visible; }
+  .slide { min-height: 66dvh; padding: 1.15rem .95rem; border-top-width: 5px; gap: .95rem; font-size: 1rem; }
+  .eyebrow, .label { font-size: .72rem; margin-bottom: .35rem; }
+  .slide h1, .slide h2, .slide h2.compact-title { font-size: clamp(1.95rem, 6.9vw, 3rem); line-height: 1.02; }
+  .cover h1 { font-size: clamp(2.6rem, 9vw, 4.15rem); max-width: none; }
+  .lead, .cover .lead { margin-top: .45rem; font-size: 1rem; max-width: none; }
+  .slide-body, .lab { gap: .8rem; }
+  .slide-footer { font-size: .7rem; padding-top: .42rem; gap: .35rem; }
+  .small, .caption { font-size: .88rem; }
+  .card { padding: .75rem .8rem; }
+  .card h3, .subhead { font-size: 1.3rem; }
+  .metric { font-size: 1.9rem; }
+  .card h3 + *, .card .label + *, .card p + p, .prose-stack > * + * { margin-top: .42rem; }
+  .callout, .formula, .reveal { padding: .6rem .7rem; }
+  .formula, .formula.large { font-size: 1.18rem; }
+  .formula .comment { font-size: .8rem; }
+  .cols, .cols.wide-left, .cols.wide-right, .cols.three, .cover-grid { grid-template-columns: 1fr; gap: .72rem; }
+  .cover-path { font-size: .9rem; gap: .4rem .62rem; }
+  .cover-path a { padding-top: .32rem; }
+  .cover-figure { padding: .75rem; }
+  .cover-figure .token-lane { margin: .42rem 0; font-size: 1rem; }
+  .cover-figure .lab-button { margin-top: .62rem; }
+  .flow { flex-wrap: wrap; gap: .34rem; }
+  .flow-step { flex: 1 1 40%; padding: .58rem; }
+  .flow-step > strong { font-size: 1.08rem; }
+  .flow-step > span { font-size: .81rem; }
+  .flow > .arrow { font-size: .9rem; }
+  .data-table { font-size: .88rem; }
+  .data-table thead th { font-size: .82rem; }
+  .data-table td, .data-table th { padding: .4rem .45rem; }
+  .calc-step { padding: .25rem 0 .4rem; }
+  .calc-step .mathline { font-size: 1.13rem; }
+  .translator { grid-template-columns: 1fr; gap: .55rem; }
+  .translator-bridge .arrow { display: inline-block; margin-left: .3rem; font-size: 1.1rem; transform: rotate(90deg); }
+  .distance-sentence { display: block; font-size: 1.22rem; }
+  .link-line { display: none; }
+  .token-grid { gap: .45rem; }
+  .token-grid .card { padding: .4rem; }
+  .token-grid .token { font-size: .75rem; }
+  .lab legend, .choice, .lab-button, .range-control, .bar-row, .bar-value { font-size: .88rem; }
+  .lab legend { margin-bottom: .3rem; }
+  .choices, .choice-group { gap: .35rem; }
+  .choice, .lab-button { padding: .35rem .5rem; }
+  .track { height: .52rem; }
+  .bar-row { grid-template-columns: 5.5rem 1fr 3.8rem; gap: .45rem; }
+  .result-line { padding: .42rem .6rem; }
+  .source-row { grid-template-columns: 1fr; font-size: .9rem; gap: .16rem; padding-bottom: .45rem; }
+  .vector-plot { height: 8.5rem; font-size: .87rem; }
+  .code-box { font-size: .72rem; padding: .6rem; max-height: 18rem; }
+  .nav { position: sticky; bottom: 0; background: var(--surround); padding: .42rem 0; margin-top: .35rem; }
+}
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { background: white; }
+  .shell, .nav, .keyboard-help, .dialog, .skip, .script-only { display: none !important; }
+  .stage, .enhanced .stage { width: 277mm; margin: 10mm; aspect-ratio: auto; }
+  .slide, .enhanced .slide, .enhanced .slide:not(.active) {
+    display: flex;
+    min-height: 0;
+    height: 155.8mm;
+    break-after: page;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+    margin: 0;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .slide:last-child { break-after: auto; }
+  .guided .slide-footer > span:last-child { display: inline; }
+}
+
+.brand-group { display: flex; align-items: center; gap: .6rem; }
+.catalog-link { display: inline-flex; align-items: center; text-decoration: none; color: var(--navy); }
+.cover .cover-figure .flow-step { background: var(--blue-paper); color: var(--ink); }
+.cover .cover-figure .flow-step:last-child { background: var(--teal-paper); }
+.cover .cover-figure p + p { margin-top: .5cqw; }
+.trace-control { display: flex; gap: .45cqw; flex-wrap: wrap; }
+.trace-record { min-height: 15cqw; }
+.trace-record h3 { margin-bottom: .7cqw; }
+.trace-record p + p { margin-top: .55cqw; }
+html.enhanced .trace-record[data-trace-state][hidden] { display: none; }
+.example-code { font: 1.36cqw/1.37 var(--mono); background: var(--navy-deep); color: #f0f7fa; border-radius: 4px; padding: .9cqw 1.07cqw; margin: .4cqw 0 0; overflow-x: auto; white-space: pre; }
+.example-code code { font-size: 1em; }
+.rows-chart { display: grid; gap: .4cqw; min-width: 0; }
+.chart-row {
+  display: grid; grid-template-columns: minmax(8.7cqw, 1fr) minmax(0, 3fr) minmax(5.8cqw, .72fr);
+  gap: .62cqw; align-items: center; min-width: 0; font-size: 1.43cqw; line-height: 1.14;
+}
+.chart-track { display: block; width: 100%; height: .95cqw; border-radius: 2px; background: #dce5e9; overflow: hidden; }
+.chart-bar { display: block; height: 100%; background: var(--teal); }
+.chart-bar.dark { background: var(--navy); }
+.chart-bar.amber { background: #a57216; }
+.chart-number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chart-axis { display: grid; grid-template-columns: minmax(8.7cqw,1fr) minmax(0,3fr) minmax(5.8cqw,.72fr); gap: .62cqw; align-items: baseline; }
+.chart-axis [data-axis-values] { display: flex; justify-content: space-between; color: var(--muted); font-size: 1.05cqw; font-variant-numeric: tabular-nums; }
+.frontier-figure .chart-row { font-size: 1.24cqw; min-height: 1.54cqw; grid-template-columns: minmax(9.9cqw, 1.06fr) minmax(0, 3.05fr) minmax(10.5cqw, 1.14fr); }
+.frontier-figure .chart-axis { grid-template-columns: minmax(9.9cqw, 1.06fr) minmax(0, 3.05fr) minmax(10.5cqw, 1.14fr); }
+.frontier-figure .chart-track { height: .82cqw; }
+.frontier-figure .chart-number { color: var(--muted); }
+.frontier-figure .chart-number strong { color: var(--ink); }
+.frontier-figure .rows-chart { gap: .28cqw; }
+.frontier-figure .choices { margin-bottom: .52cqw; }
+.frontier-figure .caption { margin-top: .38cqw; }
+.triad { display: flex; align-items: stretch; gap: .75cqw; }
+.triad > div { flex: 1; border-top: 3px solid var(--teal); padding: .58cqw .2cqw; }
+.triad .value { font: 650 2.95cqw/1.05 var(--serif); color: var(--navy); }
+.triad p { font-size: 1.28cqw; line-height: 1.22; color: var(--muted); }
+.hero-metric { display: grid; gap: .6cqw; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: .48em 1em; color: var(--muted); font-size: 1.25cqw; }
+.legend-chip { display: inline-block; width: .85em; height: .55em; background: var(--teal); margin-right: .34em; }
+.legend-chip.dark { background: var(--navy); }
+.legend-chip.amber { background: #a57216; }
+.bench-detail { display: grid; gap: .55cqw; }
+@media (max-width: 720px), (max-aspect-ratio: 1/1) {
+  .brand-group { gap: .4rem; }
+  .trace-control { gap: .36rem; }
+  .trace-record { min-height: 0; }
+  .trace-record h3 { margin-bottom: .4rem; }
+  .trace-record p + p { margin-top: .35rem; }
+  .example-code { font-size: .72rem; padding: .6rem; }
+  .chart-row, .chart-axis { grid-template-columns: minmax(4.6rem,1fr) minmax(0,1.45fr) minmax(3.7rem,.7fr); gap: .38rem; font-size: .82rem; }
+  .chart-track { height: .51rem; }
+  .rows-chart { gap: .45rem; }
+  .frontier-figure .chart-row, .frontier-figure .chart-axis { grid-template-columns: minmax(5.3rem,1.12fr) minmax(0,1.24fr) minmax(5.7rem,1fr); gap: .37rem; }
+  .frontier-figure .chart-row { min-height: 1rem; font-size: .76rem; }
+  .frontier-figure .rows-chart { gap: .43rem; }
+  .frontier-figure .chart-track { height: .45rem; }
+  .chart-axis [data-axis-values] { font-size: .58rem; }
+  .frontier-figure .choices { margin-bottom: .45rem; }
+  .triad { gap: .4rem; }
+  .triad > div { padding: .36rem .1rem; }
+  .triad .value { font-size: 1.47rem; }
+  .triad p, .legend { font-size: .8rem; }
+}
+.trace-control { margin-bottom: .65cqw; }
+.frontier-figure .chart-number small { font-size: .86em; }
+@media (max-width: 720px), (max-aspect-ratio: 1/1) {
+  .trace-control { margin-bottom: .55rem; }
+  .frontier-figure .chart-number small { display: block; }
+}
+.cover .slide-footer a { color: #dbe6ec; }
+.chart-axis [data-axis-values] { display: block; position: relative; min-height: 1.22em; }
+.chart-axis [data-axis-values] > span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.chart-axis [data-axis-values] > :nth-child(1) { left: 0; transform: none; }
+.chart-axis [data-axis-values] > :nth-child(2) { left: 25%; }
+.chart-axis [data-axis-values] > :nth-child(3) { left: 50%; }
+.chart-axis [data-axis-values] > :nth-child(4) { left: 75%; }
+.chart-axis [data-axis-values] > :nth-child(5) { right: 0; transform: none; }
+@media (min-width: 721px) and (min-aspect-ratio: 1/1) {
+  .rows-chart:not(.frontier-figure .rows-chart) .chart-row { grid-template-columns: minmax(10.3cqw, 1.1fr) minmax(0, 3fr) minmax(5.8cqw, .72fr); }
+}
+@media (max-width: 400px) {
+  .frontier-figure [data-axis-values] > :nth-child(4) { visibility: hidden; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#szinpad">Ugrás az aktuális diához</a>
+<header class="shell">
+  <div class="brand-group"><a class="control catalog-link" id="catalog-link" href="../" hidden>Courses</a><a class="brand" href="#kezdes">Harness engineering</a></div>
+  <div class="shell-actions script-only">
+    <button class="control" id="open-toc" type="button">Tartalom</button>
+    <button class="control" id="open-notes" type="button">Részletes magyarázat</button>
+    <button class="control" id="fullscreen" type="button" aria-pressed="false">Teljes képernyő</button>
+  </div>
+</header>
+<main class="stage" id="szinpad" tabindex="-1" aria-label="Prezentáció">
+<section class="slide cover" id="kezdes" aria-labelledby="kezdes-title">
+  <header class="slide-header">
+    <p class="eyebrow">Egyetemi előadás · Coding agents</p>
+    <h1 class="slide-title" id="kezdes-title" tabindex="-1">Harness engineering</h1>
+    <p class="lead">Mitől lesz egy nyelvi modellből kódot módosító, tesztelő és mérhető agent?</p>
+  </header>
+  <div class="slide-body"><div class="cover-grid">
+      <div class="cover-path" aria-label="Fejezetek"><a href="#harness-def"><span>01</span>Mit csinál a harness?</a><a href="#dobozos"><span>02</span>Claude Code, Codex és Pi</a><a href="#custom"><span>03</span>Custom harness</a><a href="#eval-harness"><span>04</span>Hogyan mérjük?</a><a href="#frontierharness"><span>05</span>Valós benchmarkok</a><a href="#feladat-koltseg"><span>06</span>Gyakorlás</a></div>
+      <figure class="cover-figure hero-metric">
+        <p class="label">FrontierHarness v1.0 · Kimi K3</p>
+        <p><strong>19 / 30</strong> sikeres feladat mindkét konfigurációban.</p>
+        <p class="small">A mért futási költség sikerre vetítve <b>3,28 USD</b> a DSH Creator, <b>18,34 USD</b> a Claude Code beállításnál.</p>
+        <p class="caption">Ismert költség 27/30, illetve 29/30 futásnál.</p>
+      </figure>
+    </div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A nyitóadat két konkrét konfiguráció ugyanazon a benchmarkon. Mindkettő a Kimi K3 modellt használta egy közös gateway-en. A költség a futások ismert költségét osztja a sikerek számával. Az ábrán a költségadatok lefedettsége is látszik.</p><p>A tananyag magyar magyarázatot használ angol szakkifejezésekkel. A kódos példa fiktív, az adatábrák mellett ott az eredeti mérés és a nevező.</p></aside>
+  <footer class="slide-footer"><span><a href="https://runta.com/blog/introducing-frontierharness-eval/" target="_blank" rel="noopener noreferrer">Runta · FrontierHarness v1.0</a> &nbsp;·&nbsp; <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/results/eval-data.json" target="_blank" rel="noopener noreferrer">FrontierHarness · Rögzített eredményfájl</a></span><span>01 / 39</span></footer>
+</section>
+
+<section class="slide" id="utvonal" aria-labelledby="utvonal-title">
+  <header class="slide-header">
+    <p class="eyebrow">Egyetemi előadás · Coding agents</p>
+    <h2 class="slide-title" id="utvonal-title" tabindex="-1">Egy CSV-feladattól a benchmarkig</h2>
+    <p class="lead">Ugyanazt a hétköznapi kódmódosítást követjük végig három kérdésen.</p>
+  </header>
+  <div class="slide-body"><div class="cols three stretch"><section class="card tint"><h3>Mit lát és mit tehet?</h3><p>A modell kódmódosítást kér. Megnézzük, ki olvassa a fájlt, ki futtatja a tesztet és mit kap vissza a modell.</p></section><section class="card signal"><h3>Hol alakítható?</h3><p>Megnézzük ugyanazt a munkát Claude Code, Codex és Pi esetén, majd egy szűk feladatra épített harnessben.</p></section><section class="card result"><h3>Honnan tudjuk, hogy jobb?</h3><p>Kiszámoljuk a sikerrátát és az egy sikerre jutó költséget. Három publikált mérésből olvasunk ábrát.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Az első szakaszhoz elég tudni, hogy a repository egy kódprojekt és annak előzményei. A későbbi mérésnél a százalék és az átlag alapötletét használjuk.</p></aside>
+  <footer class="slide-footer"><span></span><span>02 / 39</span></footer>
+</section>
+
+<section class="slide" id="harness-def" aria-labelledby="harness-def-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="harness-def-title" tabindex="-1">Mi a harness?</h2>
+    <p class="lead">A harness az a futtató réteg a modell körül, amely előkészíti a bemenetet, végrehajtja a jóváhagyott műveleteket, és visszaadja az eredményt.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Feladat</strong><span>„Tegyél status oszlopot a CSV-be.”</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Modell</strong><span>Műveletet javasol vagy választ ad.</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Harness</strong><span>Fájlt olvas, módosít, tesztet futtat.</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Környezet</strong><span>Repository, futtató és tesztadat.</span></div></div><div class="callout ">A harness engineering ezeknek az eszközöknek, kontextusszabályoknak és visszajelzési pontoknak a megtervezése és mérése.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Coding agent alatt itt a működő rendszert értjük: nyelvi modell, harness, hozzáférhető eszközök és környezet együtt. A modell a következő lépést választja, az alkalmazás valósítja meg a tényleges hatást.</p><p>A szó szűkebb jelentésében a futtató kódot jelöli. Az OpenAI mérnöki esettanulmánya a repository környezetét és az ellenőrzési lehetőségeket is a harness engineering részeként kezeli.</p></aside>
+  <footer class="slide-footer"><span><a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">Anthropic · Claude Code loop</a> &nbsp;·&nbsp; <a href="https://developers.openai.com/blog/codex-as-a-platform" target="_blank" rel="noopener noreferrer">OpenAI Developers · Codex as a platform</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a></span><span>03 / 39</span></footer>
+</section>
+
+<section class="slide" id="csv-spec" aria-labelledby="csv-spec-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="csv-spec-title" tabindex="-1">A példa feladata egy új CSV-oszlop</h2>
+    <p class="lead">A CSV táblázatos szövegformátum. A vessző oszlopokat választ el, az idézőjel egyben tartja a vesszőt tartalmazó értéket.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A feladat</h3><p>A meglévő export végére kerüljön a <code>status</code> oszlop. Maradjon működőképes a vesszőt tartalmazó név.</p><pre class="example-code"><code>id,name
+1,&quot;Nagy, Anna&quot;</code></pre></section><section class="card signal"><h3>Várt kimenet</h3><pre class="example-code"><code>id,name,status
+1,&quot;Nagy, Anna&quot;,active</code></pre><p class="small">A második sor pontosan három mező. A <code>Nagy, Anna</code> egyetlen érték.</p></section></div><div class="callout ">A fixture egy rögzített bemeneti példa. Itt az <code>id=1</code>, <code>name=Nagy, Anna</code> és <code>status=active</code> mezőkből áll.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A CSV viselkedése direkt egyszerű. A konkrét fixture segít látni, mi alapján fogjuk megkülönböztetni a hihető javítást a működő javítástól.</p></aside>
+  <footer class="slide-footer"><span></span><span>04 / 39</span></footer>
+</section>
+
+<section class="slide" id="agent-loop" aria-labelledby="agent-loop-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="agent-loop-title" tabindex="-1">Az agent loop egy döntést és egy visszajelzést ismétel</h2>
+    <p class="lead">A tool call egy műveletre vonatkozó strukturált kérés. A harness feldolgozza, lefuttatja és a tool resultot visszaadja a modellnek.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Context</strong><span>Feladat és exportkód</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Model turn</strong><span>Például egy patch kérése</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Tool call</strong><span>A harness alkalmazza a patchet</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Feedback</strong><span>Tesztkimenet kerül a következő turnbe</span></div></div><div class="cols stretch"><section class="card tint"><h3>Model turn</h3><p>Egy modellhívás. A válasz lehet szöveg vagy egy vagy több eszközhívás.</p></section><section class="card signal"><h3>Tool call</h3><p>Egy konkrét művelet, például fájlolvasás vagy tesztfuttatás. Az eredmény segíti a következő model turnt.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A ciklus folytatódhat, amíg a feladat ellenőrizve elkészül, eléri a budgetet, hibát jelez vagy felhasználói döntésre vár. A prompt, az engedélyezett toolok és a korábbi eredmények befolyásolják az új döntést.</p></aside>
+  <footer class="slide-footer"><span><a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">Anthropic · Claude Code loop</a> &nbsp;·&nbsp; <a href="https://developers.openai.com/blog/codex-as-a-platform" target="_blank" rel="noopener noreferrer">OpenAI Developers · Codex as a platform</a></span><span>05 / 39</span></footer>
+</section>
+
+<section class="slide" id="tool-contract" aria-labelledby="tool-contract-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="tool-contract-title" tabindex="-1">Egy tool contract megmondja, mi jön vissza</h2>
+    <p class="lead">A contract az eszköz megengedett bemenetét és értelmezhető kimenetét írja le. A tesztet futtató tool az eredményt rövid, egyértelmű mezőkben adhatja vissza.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A modell kérése</h3><pre class="example-code"><code>run_csv_tests()</code></pre><p class="small">A tool a projekthez tartozó CSV-teszteket futtatja az aktuális munkapéldányon.</p></section><section class="card signal"><h3>A harness visszajelzése</h3><pre class="example-code"><code>exit_code: 1
+passed: 2
+failed: quoted_name
+expected_fields: 3
+actual_fields: 4</code></pre><p class="small">Az <code>exit_code</code> a program kilépési kódja. Itt az 1 sikertelen ellenőrzést jelez.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Az exit code mellé adott hibaazonosító és elvárt érték megmutatja, min kell javítani. A teljes log elmenthető visszanézéshez, miközben a modell a rövidített hibát kapja.</p></aside>
+  <footer class="slide-footer"><span></span><span>06 / 39</span></footer>
+</section>
+
+<section class="slide" id="trace" aria-labelledby="trace-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="trace-title" tabindex="-1">Kövesd végig a CSV-javítás trace-ét</h2>
+    <p class="lead">A trace a futás eseménynaplója. Lépj végig a négy eseményen, és figyeld, mi kerül vissza a modellhez.</p>
+  </header>
+  <div class="slide-body"><div data-trace><div class="trace-control script-only" aria-label="Trace lépései"><button class="choice" type="button" data-trace-button="0" aria-pressed="true">Read</button><button class="choice" type="button" data-trace-button="1" aria-pressed="false">Patch</button><button class="choice" type="button" data-trace-button="2" aria-pressed="false">Fail</button><button class="choice" type="button" data-trace-button="3" aria-pressed="false">Pass</button></div><div data-trace-results aria-live="polite"><section class="card signal trace-record" data-trace-state="0"><h3>1. A modell felméri a projektet</h3><p>A harness megnyitja az exportkódot és a kapcsolódó tesztet.</p><p class="small">Eredmény. A fejléc jelenleg kétoszlopos, a név idézőjelezésére külön fixture van.</p></section><section class="card signal trace-record" data-trace-state="1"><h3>2. Elkészül az első módosítás</h3><p>A modell hozzáadja az oszlopot. A kézzel összefűzött sorból kimarad az idézőjel.</p><p class="small">A hibás sor <code>1,Nagy, Anna,active</code>. A parser ezt négy mezőre bontja.</p></section><section class="card signal trace-record" data-trace-state="2"><h3>3. A teszt visszaadja a konkrét hibát</h3><p>A harness a teszt eredményét visszateszi a contextbe.</p><p class="small">A <code>quoted_name</code> esetben elvárt mezőszám 3, tényleges mezőszám 4.</p></section><section class="card signal trace-record" data-trace-state="3"><h3>4. Új patch, ellenőrzött kimenet</h3><p>A modell az értékeket a CSV writernek adja át. A harness újrafuttatja a tesztet.</p><p class="small">A javított sor <code>1,"Nagy, Anna",active</code>. Mindhárom teszt átmegy.</p></section></div></div><div class="callout ">A konkrét teszthiba megmutatja, melyik bemenetnél és miben tér el a patch viselkedése a feladattól.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Ez szemléltető trace. Valódi naplóban időpont, model turn, toolnév, időtartam, státusz és a módosított fájlok diffje is hasznos. Érdemes a feladathoz tartozó eseményeket egy run ID-val összekapcsolni.</p></aside>
+  <footer class="slide-footer"><span></span><span>07 / 39</span></footer>
+</section>
+
+<section class="slide" id="context" aria-labelledby="context-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="context-title" tabindex="-1">A context policy választja ki, mit lásson a modell</h2>
+    <p class="lead">A context window a modell által egy hívásban feldolgozható tokenek kerete. Nagy parancskimenetek is foglalnak belőle helyet.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Egy hosszú tesztlog</h3><p>Képzelj el egy <b>9 000 tokenes</b> naplót. A hiba egy sorban van, a többi sikeres tesztek listája.</p><p class="small">A teljes fájl elmenthető az ellenőrzéshez.</p></section><section class="card signal"><h3>A következő turn bemenete</h3><p>A harness egy szemléltető <b>240 tokenes</b> kivonatot ad. Tartalmazza a hibát, a fixture-t és a teljes napló elérési útját.</p><p class="small">A compaction a régebbi kontextus rövidítése vagy tömörítése.</p></section></div><div class="callout ">A kivonat akkor használható, ha megőrzi az elvárt és a tényleges eredményt, valamint a visszakeresés módját.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A 9 000 és 240 szemléltető szám. Egy működő policy külön kezelheti a friss hibát, a régebbi logokat, a projektutasításokat és a teljes futási rekordot. Egy context változtatás hatását minőség és költség szerint is érdemes mérni.</p></aside>
+  <footer class="slide-footer"><span><a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">Anthropic · Claude Code loop</a> &nbsp;·&nbsp; <a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer">Anthropic · Long-running agents</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a></span><span>08 / 39</span></footer>
+</section>
+
+<section class="slide" id="hatarok" aria-labelledby="hatarok-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="hatarok-title" tabindex="-1">A sandbox és az approval más döntést kezel</h2>
+    <p class="lead">A sandbox technikailag korlátozza a futó művelet hozzáférését. Az approval policy szabályozza, mikor kérjen az alkalmazás emberi döntést.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Művelet</th><th scope="col">Egy példa a policyra</th><th scope="col">Mit lát a modell?</th></tr></thead><tbody><tr><td>Tesztfájl olvasása</td><td>A kijelölt munkapéldányban engedélyezett</td><td>A fájl szövege</td></tr><tr><td>CSV-patch alkalmazása</td><td>Csak a kijelölt workspace-ben írhat</td><td>Siker vagy elutasítás</td></tr><tr><td>Külső kiadás indítása</td><td>Külön emberi jóváhagyáshoz kötött</td><td>Függőben vagy jóváhagyva</td></tr></tbody></table></div><div class="callout ">A futás eredménye lehet elkészült patch és tesztbizonyíték. A kiadásnak külön feltétele lehet.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A pontos alapbeállítások terméktől, felülettől és szervezeti policytól függenek. A táblázat feladathoz szabott példa. A prompt leírhatja az elvárt határt, a futtató technikailag is érvényesítheti.</p></aside>
+  <footer class="slide-footer"><span><a href="https://learn.chatgpt.com/docs/agent-approvals-security" target="_blank" rel="noopener noreferrer">OpenAI Docs · Approvals and security</a> &nbsp;·&nbsp; <a href="https://code.claude.com/docs/en/permissions" target="_blank" rel="noopener noreferrer">Anthropic · Permissions</a></span><span>09 / 39</span></footer>
+</section>
+
+<section class="slide" id="verification" aria-labelledby="verification-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="verification-title" tabindex="-1">A verification a módosított programot vizsgálja</h2>
+    <p class="lead">A verifier megadott elfogadási feltételeket ellenőriz. A CSV-példában a fájlt visszaolvassa, és megnézi a mezőket.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Ellenőrzés</th><th scope="col">Elvárt eredmény</th><th scope="col">Első patch</th><th scope="col">Javított patch</th></tr></thead><tbody><tr><td>Fejléc</td><td><code>id,name,status</code></td><td>PASS</td><td>PASS</td></tr><tr class="highlight"><td>Vesszős név</td><td>Egy névmező, három mező összesen</td><td>FAIL</td><td>PASS</td></tr><tr><td>Üres export</td><td>Fejléc adatmezők nélkül</td><td>PASS</td><td>PASS</td></tr></tbody></table></div><div class="callout ">A CI ugyanilyen ellenőrzést futtathat minden módosítás után. A teszt a megfigyelt kimenetből dönt.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Egy verifier annyira erős, amennyire a lefedett követelmények. A fejlesztés közben futtatható tesztek hasznos visszajelzést adnak. Egy eval külön tartott ellenőrzésekkel a megoldás általánosabb helyességét is vizsgálhatja.</p></aside>
+  <footer class="slide-footer"><span><a href="https://openai.com/index/harness-engineering/" target="_blank" rel="noopener noreferrer">OpenAI · Harness engineering</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a></span><span>10 / 39</span></footer>
+</section>
+
+<section class="slide" id="repo-kornyezet" aria-labelledby="repo-kornyezet-title">
+  <header class="slide-header">
+    <p class="eyebrow">01 / A modell körüli rendszer</p>
+    <h2 class="slide-title" id="repo-kornyezet-title" tabindex="-1">A repository is megtervezhető az agent munkájához</h2>
+    <p class="lead">A harness eredményességét javíthatja, ha a projektben megtalálható az indulás, a tesztelés és az ellenőrzés módja.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A CSV-projektben</h3><ul class="list"><li><b>Projektutasítás.</b> Hol van az export modul, és melyik parancs futtatja a teszteket?</li><li><b>Fixture.</b> Van-e példa vesszős névre és üres exportfájlra?</li><li><b>CI.</b> Minden módosítás ugyanazokon az ellenőrzéseken fut át.</li></ul></section><section class="card signal"><h3>Mérnöki esettanulmány</h3><p>Az OpenAI Codexszel végzett kísérletében a csapat a repository szerkezetét, az agent számára elérhető dokumentációt és az ellenőrzési hurkokat is építette.</p><p class="small">A környezetben elérhető visszajelzés konkrét javítási pontot ad.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Ez esettanulmány egy adott csapat projektjéről. A műveleti javaslat abból következik, hogy egy rögzített és ellenőrizhető feladatot könnyebb ismételten lefuttatni. A hatás mértékét a saját repositoryban lehet számszerűsíteni.</p></aside>
+  <footer class="slide-footer"><span><a href="https://openai.com/index/harness-engineering/" target="_blank" rel="noopener noreferrer">OpenAI · Harness engineering</a> &nbsp;·&nbsp; <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md" target="_blank" rel="noopener noreferrer">OpenAI Docs · AGENTS.md</a></span><span>11 / 39</span></footer>
+</section>
+
+<section class="slide" id="dobozos" aria-labelledby="dobozos-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Claude Code, Codex és Pi</p>
+    <h2 class="slide-title" id="dobozos-title" tabindex="-1">Mit kapsz egy dobozos coding harnessben?</h2>
+    <p class="lead">A dobozos eszközben az agent loop, a felület és az alap toolok már össze vannak kapcsolva. A projekt szabályai ezekhez csatlakoznak.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Eszköz</th><th scope="col">A csomag része</th><th scope="col">Amit a projekthez adsz</th></tr></thead><tbody><tr><td>Claude Code</td><td>Kódkeresés, edit, shell, context management</td><td><code>CLAUDE.md</code>, hooks, permissions</td></tr><tr><td>Codex CLI</td><td>Terminálos agent, fájlműveletek, command run, sandbox</td><td><code>AGENTS.md</code>, projektutasítás, jóváhagyási policy</td></tr><tr><td>Pi</td><td>Terminálos agent, session és választható eszközkészlet</td><td>Modell és provider, context files, extensions</td></tr></tbody></table></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A táblázat a gyakorlati belépési pontokat mutatja, a szolgáltatások pontos csomagolása és alapértékei változhatnak. Egy CLI felület kezelése és az alatta futó modellkonfiguráció két külön beállítás.</p></aside>
+  <footer class="slide-footer"><span><a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">Anthropic · Claude Code loop</a> &nbsp;·&nbsp; <a href="https://learn.chatgpt.com/docs/codex/cli" target="_blank" rel="noopener noreferrer">OpenAI Docs · Codex CLI</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/cli" target="_blank" rel="noopener noreferrer">Pi · CLI és built-in tools</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/extensions" target="_blank" rel="noopener noreferrer">Pi · Extensions</a></span><span>12 / 39</span></footer>
+</section>
+
+<section class="slide" id="claude-code" aria-labelledby="claude-code-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Claude Code, Codex és Pi</p>
+    <h2 class="slide-title" id="claude-code-title" tabindex="-1">Claude Code · context, action, verification</h2>
+    <p class="lead">A Claude Code a modell köré kódolvasást, fájlmódosítást és parancsfuttatást szervez. A dokumentáció a kontextusgyűjtést, az akciót és az ellenőrzést nevezi meg.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Projektismeret</h3><p>A <code>CLAUDE.md</code> fájlban megadható az export modul helye és a tesztparancs. A contexthez a beolvasott kód és a tesztkimenet is hozzáadódik.</p></section><section class="card signal"><h3>Automatikus visszajelzés</h3><p>Egy hook egy eseményre futó automatizmus. Egy <code>PostToolUse</code> hook például módosítás után formázási ellenőrzést indíthat.</p><p class="small">A permission szabályok az engedélyezett műveleteket határozzák meg.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A Claude Code a context window közeledtével automatikus compactiont használhat. A tartós projektutasítás és az eseményalapú hook külön célt szolgál. A konkrét esemény, matcher és beállítás a hivatalos hooks referenciában ellenőrizhető.</p></aside>
+  <footer class="slide-footer"><span><a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">Anthropic · Claude Code loop</a> &nbsp;·&nbsp; <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener noreferrer">Anthropic · Project memory</a> &nbsp;·&nbsp; <a href="https://code.claude.com/docs/en/hooks" target="_blank" rel="noopener noreferrer">Anthropic · Hooks</a> &nbsp;·&nbsp; <a href="https://code.claude.com/docs/en/permissions" target="_blank" rel="noopener noreferrer">Anthropic · Permissions</a></span><span>13 / 39</span></footer>
+</section>
+
+<section class="slide" id="codex" aria-labelledby="codex-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Claude Code, Codex és Pi</p>
+    <h2 class="slide-title" id="codex-title" tabindex="-1">Codex · repository, eszközök és futtatási határok</h2>
+    <p class="lead">A Codex CLI a repositoryban olvas, szerkeszt és parancsokat futtat. Az OpenAI dokumentációja külön írja le a projektutasításokat és a hozzáférési szabályokat.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Projektutasítás</h3><p>Az <code>AGENTS.md</code> tartalmazhatja a CSV-fixture helyét és a tesztparancsot. A projekt mappaszerkezete alapján további utasítások is betölthetők.</p></section><section class="card signal"><h3>A futás kerete</h3><p>A sandbox megadja, hol lehet írni és milyen hozzáférés áll rendelkezésre. Az approval policy határozza meg, mikor szükséges jóváhagyás.</p><p class="small">A diff és a tesztkimenet visszanézhető a futás közben.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A Codex CLI egy kész coding harness felülete. Az app-server más alkalmazásoknak ad hozzáférést a Codex agent loophoz, eseményekhez és approval mechanizmushoz. A termékállítások az OpenAI hivatalos dokumentációjára épülnek.</p></aside>
+  <footer class="slide-footer"><span><a href="https://learn.chatgpt.com/docs/codex/cli" target="_blank" rel="noopener noreferrer">OpenAI Docs · Codex CLI</a> &nbsp;·&nbsp; <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md" target="_blank" rel="noopener noreferrer">OpenAI Docs · AGENTS.md</a> &nbsp;·&nbsp; <a href="https://learn.chatgpt.com/docs/agent-approvals-security" target="_blank" rel="noopener noreferrer">OpenAI Docs · Approvals and security</a></span><span>14 / 39</span></footer>
+</section>
+
+<section class="slide" id="pi" aria-labelledby="pi-title">
+  <header class="slide-header">
+    <p class="eyebrow">02 / Claude Code, Codex és Pi</p>
+    <h2 class="slide-title" id="pi-title" tabindex="-1">Pi · kis alap eszközkészlet és extensions</h2>
+    <p class="lead">A Pi terminálos coding harness. A dokumentált alapértelmezett toolok a read, bash, edit és write.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Tool</th><th scope="col">Mit csinál?</th><th scope="col">CSV-példa</th></tr></thead><tbody><tr><td><code>read</code></td><td>Fájlt olvas</td><td>Megnyitja az export modult</td></tr><tr><td><code>edit</code> / <code>write</code></td><td>Fájlt szerkeszt vagy ír</td><td>Alkalmazza a változtatást</td></tr><tr><td><code>bash</code></td><td>Shell-parancsot futtat</td><td>Elindítja a projekt tesztjét</td></tr></tbody></table></div><div class="callout ">Egy extension saját <code>run_csv_tests</code> toolt adhat a Pi-hez. A tool visszaadhatja a teszt státuszát és a hibás fixture azonosítóját.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A Pi CLI lehetővé teszi az eszközkészlet és a modell/provider kiválasztását. A TypeScript SDK alkalmazásba ágyazható sessiont és tool-hozzáférést biztosít. A négy alaptool az aktuálisan dokumentált alapbeállítás.</p></aside>
+  <footer class="slide-footer"><span><a href="https://pi.dev/docs/latest/cli" target="_blank" rel="noopener noreferrer">Pi · CLI és built-in tools</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/extensions" target="_blank" rel="noopener noreferrer">Pi · Extensions</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/sdk" target="_blank" rel="noopener noreferrer">Pi · SDK</a></span><span>15 / 39</span></footer>
+</section>
+
+<section class="slide" id="custom" aria-labelledby="custom-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Custom harness</p>
+    <h2 class="slide-title" id="custom-title" tabindex="-1">A custom harnessben te határozod meg a futtatást</h2>
+    <p class="lead">A testreszabás lehet konfiguráció, egy kész harness kibővítése, vagy saját agent loop építése.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Megoldás</th><th scope="col">Amit te adsz hozzá</th><th scope="col">Példa</th></tr></thead><tbody><tr><td>Konfigurált dobozos</td><td>Projektutasítás és tesztparancs</td><td>Az agent ismeri a CSV-tesztek helyét.</td></tr><tr><td>Hibrid</td><td>Saját tool vagy felület, kész agent looppal</td><td>Egy Pi extension strukturált teszthibát ad. Egy alkalmazás a Codex app-servert hívhatja.</td></tr><tr><td>Saját loop</td><td>Context policy, tool contract, budget, verifier és trace</td><td>A belső feladatfuttató négy szűk toolból és egy végső ellenőrzésből áll.</td></tr></tbody></table></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A felépítés választása határozza meg, melyik réteget lehet mérni vagy cserélni. A kész harnesshez adott projektutasítás és a saját loop is harness engineering, csak másik beavatkozási ponton.</p></aside>
+  <footer class="slide-footer"><span><a href="https://developers.openai.com/blog/codex-as-a-platform" target="_blank" rel="noopener noreferrer">OpenAI Developers · Codex as a platform</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/extensions" target="_blank" rel="noopener noreferrer">Pi · Extensions</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/sdk" target="_blank" rel="noopener noreferrer">Pi · SDK</a></span><span>16 / 39</span></footer>
+</section>
+
+<section class="slide" id="custom-terv" aria-labelledby="custom-terv-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Custom harness</p>
+    <h2 class="slide-title" id="custom-terv-title" tabindex="-1">Négy tool és egy ellenőrzési feltétel</h2>
+    <p class="lead">Egy belső CSV-feladathoz a custom harness célzott eszközöket adhat. Minden toolhoz bemenet, kimenet és megengedett hatás tartozik.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Tool</th><th scope="col">Bemenet</th><th scope="col">Kimenet</th></tr></thead><tbody><tr><td><code>read_export</code></td><td>Az export modul azonosítója</td><td>Fájltartalom</td></tr><tr><td><code>apply_patch</code></td><td>A javasolt változtatás</td><td>Módosított fájlok vagy hiba</td></tr><tr><td><code>run_csv_tests</code></td><td>Aktuális munkapéldány</td><td>Tesztstátusz, hibás fixture</td></tr><tr><td><code>get_diff</code></td><td>Alapcommit és munkapéldány</td><td>Az elvégzett változások</td></tr></tbody></table></div><div class="callout ">Az elfogadott eredmény a patch, a passing verifier és a változtatás összefoglalója.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A tool csak az adott feladat hatókörében módosít. A végső állapotot egy ellenőrzés rögzíti, így a felhasználó látja, melyik változtatáshoz milyen bizonyíték tartozik.</p></aside>
+  <footer class="slide-footer"><span></span><span>17 / 39</span></footer>
+</section>
+
+<section class="slide" id="custom-loop" aria-labelledby="custom-loop-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Custom harness</p>
+    <h2 class="slide-title" id="custom-loop-title" tabindex="-1">Egy saját loopban a budget és a stop is szabály</h2>
+    <p class="lead">A budget megszabhatja a turnök számát és az eltelt időt. A stop condition eldönti, mikor adható vissza ellenőrzött eredmény.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left stretch"><section class="card tint"><h3>Szemléltető pszeudokód</h3><pre class="example-code"><code>while budget.remains():
+    action = model.next(context, tools)
+    if action.is_done:
+        result = verify(workspace)
+        if result.passed:
+            return patch_and_evidence()
+    else:
+        result = run_allowed(action)
+    context.add(result.summary)
+return incomplete_with_trace()</code></pre></section><section class="card signal"><h3>Ugyanez a CSV-példában</h3><p>A modell késznek jelenti az első patchet. A verifier négy mezőt olvas a három helyett. A következő turn megkapja ezt a hibát.</p><p class="small">Ha a budget elfogy, a harness rögzíti a patch állapotát és az utolsó teszthibát.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A budget ellenőrzése a valódi implementációban a tool futási idejére is kiterjed. A run_allowed az adott tool és argumentum policyját érvényesíti. Ez olvasható algoritmusváz, a konkrét SDK függvénynevei eltérnek.</p></aside>
+  <footer class="slide-footer"><span></span><span>18 / 39</span></footer>
+</section>
+
+<section class="slide" id="recovery" aria-labelledby="recovery-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Custom harness</p>
+    <h2 class="slide-title" id="recovery-title" tabindex="-1">Recovery · külön út a teszthibára és az infrastruktúrahibára</h2>
+    <p class="lead">A recovery kezeli, hogyan folytatódjon a futás hibánál. Egy sikertelen teszt és egy el sem induló futtató eltérő bizonyíték.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Esemény</th><th scope="col">A harness következő lépése</th><th scope="col">A trace-ben</th></tr></thead><tbody><tr><td>A CSV-teszt fail</td><td>Adja vissza az elvárt és tényleges mezőszámot</td><td>Teszt és hibaazonosító</td></tr><tr><td>A futtató nem indul</td><td>Jelölje az infrastruktúrahibát. A szabály szerinti retry külön esemény.</td><td>Infra error és retry</td></tr><tr><td>Ugyanaz a hiba ismétlődik</td><td>Rögzítse az ismétlést és a budgetet. Váltson stratégiát vagy adjon át részállapotot.</td><td>Stop ok és utolsó érvényes állapot</td></tr></tbody></table></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Egy kísérletben a retry szabály a mérés része. Az agent által elért timeout értékelhető sikertelen attemptként. A hibás mérőinfrastruktúra külön kategória, és a jelentésben a nevezőre gyakorolt hatásával együtt szerepelhet.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a></span><span>19 / 39</span></footer>
+</section>
+
+<section class="slide" id="session" aria-labelledby="session-title">
+  <header class="slide-header">
+    <p class="eyebrow">03 / Custom harness</p>
+    <h2 class="slide-title" id="session-title" tabindex="-1">A session állapota megőrzi, meddig jutott a munka</h2>
+    <p class="lead">A session egy feladathoz kapcsolt beszélgetés és futási állapot. Hosszabb munkánál a következő indításnak is tudnia kell, mi készült el.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Egy hasznos mentett állapot</h3><pre class="example-code"><code>base: projekt alapcommitja
+change: status oszlop hozzáadva
+verified: header és empty_export
+open: quoted_name fixture
+next: ellenőrizd a CSV quotingot</code></pre></section><section class="card signal"><h3>Folytatás új sessionben</h3><p>Az agent betölti a feladatot és a mentett állapotot, megnézi a diffet, majd újrafuttatja a nyitott ellenőrzést.</p><p class="small">A tartós állapot a workspace-hez és a mért eredményekhez köti a szöveges összefoglalót.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Az Anthropic hosszabb agentfutásokról szóló esettanulmánya előkészítő lépést, tartós haladási rekordot és kisebb ellenőrizhető részfeladatokat mutat. A CSV-állapot egy saját példa ezekre a fogalmakra.</p></aside>
+  <footer class="slide-footer"><span><a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer">Anthropic · Long-running agents</a> &nbsp;·&nbsp; <a href="https://pi.dev/docs/latest/sdk" target="_blank" rel="noopener noreferrer">Pi · SDK</a> &nbsp;·&nbsp; <a href="https://developers.openai.com/blog/codex-as-a-platform" target="_blank" rel="noopener noreferrer">OpenAI Developers · Codex as a platform</a></span><span>20 / 39</span></footer>
+</section>
+
+<section class="slide" id="eval-harness" aria-labelledby="eval-harness-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="eval-harness-title" tabindex="-1">Az eval harness megismételhetővé teszi a mérést</h2>
+    <p class="lead">A coding harness a feladatot végző agent része. Az eval harness elindítja a vizsgálatot, rögzíti a futást, és értékeli az eredményt.</p>
+  </header>
+  <div class="slide-body"><div class="flow"><div class="flow-step"><strong>Task</strong><span>Feladat és rögzített kiinduló kód</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Run</strong><span>Egy model × harness konfiguráció</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Verifier</strong><span>Elfogadási tesztek a kész artifacton</span></div><span class="arrow" aria-hidden="true">→</span><div class="flow-step"><strong>Record</strong><span>Eredmény, költség, idő, trace</span></div></div><div class="callout ">Példa. Az eval ugyanabból a commitból indítja a két CSV-javítást, majd mindkét patchen lefuttatja ugyanazt a külön tartott tesztkészletet.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Egy benchmark rögzített feladatgyűjtemény és pontozási módszer. Az artifact a futás tényleges eredménye, itt a módosított forráskód. A verifier a felhasználónak megígért eredményt ellenőrzi.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/abs/2601.11868" target="_blank" rel="noopener noreferrer">Terminal-Bench · Tanulmány</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a></span><span>21 / 39</span></footer>
+</section>
+
+<section class="slide" id="ab-test" aria-labelledby="ab-test-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="ab-test-title" tabindex="-1">A/B mérés · melyik beállítást változtatjuk?</h2>
+    <p class="lead">Tegyük fel, hogy a hosszú log helyett strukturált teszthibát szeretnénk visszaadni. Ehhez ugyanazokat a feladatokat futtatjuk két beállítással.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>A · baseline</h3><p>A modell teljes tesztlogot kap minden sikertelen teszt után.</p><p class="small">A baseline az összehasonlítás kiinduló állapota.</p></section><section class="card signal"><h3>B · változtatás</h3><p>A modell hibanevet, expected és actual értéket kap. A teljes log elérhető marad.</p><p class="small">A tool result formátuma változik.</p></section></div><div class="callout ">Rögzítsük a pontos modellverziót, a feladatokat, a kiinduló környezetet, az idő- és tokenkeretet, valamint a verifier szabályát.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A vagy B minden runja külön, visszaállított workspace-ből indul. A futtatási sorrend és a model serving körülményei is számíthatnak, például a cache miatt. A saját környezetben a tényleges változat- és beállításazonosítók fontosabbak a marketingneveknél.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a></span><span>22 / 39</span></footer>
+</section>
+
+<section class="slide" id="pass-rate" aria-labelledby="pass-rate-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="pass-rate-title" tabindex="-1">A pass rate nevezője az értékelt attempt</h2>
+    <p class="lead">Egy attempt egy feladat egy futtatása. A pontozási szabályt a mérés előtt rögzítsük, a nevezőt az eredménnyel együtt közöljük.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Kimenet</th><th scope="col">Példa</th><th scope="col">Beszámít?</th></tr></thead><tbody><tr><td>7 pass</td><td>A verifier minden feltétele teljesül</td><td>Igen, siker</td></tr><tr><td>3 fail</td><td>A patch hibás</td><td>Igen, sikertelen</td></tr><tr><td>1 timeout</td><td>Elfogy a megadott idő</td><td>Igen, sikertelen</td></tr><tr><td>1 infra error</td><td>A futtató nem indul</td><td>Külön jelentjük</td></tr></tbody></table></div><section class="card result"><h3>12 elindított futás</h3><div class="formula">Pass rate = 7 / (7 + 3 + 1)</div><div class="formula">= 7 / 11 ≈ <b>63,6%</b></div><p class="small">Mellé írjuk, hogy 1 / 12 futás infrastruktúrahiba volt.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A konkrét pontozási szabály benchmarkfüggő. A timeout kezelése és az infra hibák kizárása itt a szemléltető protokoll része. Ha az infra hibák aránya konfigurációnként eltér, az önmagában fontos eredmény.</p></aside>
+  <footer class="slide-footer"><span><a href="https://frontierharness.org/about/" target="_blank" rel="noopener noreferrer">FrontierHarness · Élő módszertan</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a></span><span>23 / 39</span></footer>
+</section>
+
+<section class="slide" id="cost-per-pass" aria-labelledby="cost-per-pass-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="cost-per-pass-title" tabindex="-1">Mennyibe kerül egy sikeres feladat?</h2>
+    <p class="lead">A cost per pass az összes futás költségét osztja a sikerek számával. A sikertelen attempt is használhat időt és tokeneket.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Fiktív futás</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">Összesen</th></tr></thead><tbody><tr><td>Költség (USD)</td><td>1</td><td>1</td><td>1</td><td>9</td><td>12</td></tr><tr><td>Verifier</td><td>Fail</td><td>Pass</td><td>Fail</td><td>Pass</td><td>2 pass</td></tr></tbody></table></div><div class="cols stretch"><section class="card tint"><h3>A tényleges számla sikerre vetítve</h3><div class="formula">Cost per pass = 12 / 2 = <b>6 USD</b></div></section><section class="card signal"><h3>Egy tipikus attempt ára</h3><div class="formula">Rendezve 1, 1, 1, 9 → medián <b>1 USD</b></div><p class="small">A medián a középső két érték átlaga.</p></section></div><div class="callout ">Hiányzó költségnél írd mellé, hány futás számlája ismert. A részleges összeg alsó becslést adhat.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Ugyanezeken az adatokon a csak sikeres futások mediánja 5 USD. A három mutató más kérdésre válaszol. A költségek tartalmazhatják a model servinget, a tool infrastruktúrát vagy mindkettőt, attól függően, mit definiálunk a mérésben.</p></aside>
+  <footer class="slide-footer"><span><a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/skills/frontierharness-eval/SKILL.md" target="_blank" rel="noopener noreferrer">FrontierHarness · Cost accounting</a></span><span>24 / 39</span></footer>
+</section>
+
+<section class="slide" id="runtime" aria-labelledby="runtime-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="runtime-title" tabindex="-1">A p50 és a p95 más futásélményt mutat</h2>
+    <p class="lead">A wall-clock time az indítástól a befejezésig eltelt idő. Ebbe a modellhívások, a teszt és a várakozás is beleszámíthat.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Öt szemléltető futás</h3><div class="formula">Rendezve: 2, 3, 4, 6, 10 perc</div><p><b>p50 = 4 perc.</b> Ez a középső érték.</p><p><b>p95 = 10 perc</b> a nearest-rank szabállyal.</p></section><section class="card signal"><h3>Miért fontos a hosszú futás?</h3><p>Ha a tesztparancs várakozik, kevés futás is megnyújthatja a felső tartományt.</p><p class="small">A p95 mellé add meg a mintanagyságot, a timeoutot és azt, hogy minden vagy csak a sikeres futást mérted.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A nearest-rank itt a ceil(0,95 × 5)=5. pozíciót választja. Öt futásnál a p95 erősen függ egyetlen megfigyeléstől. Sok futásnál a p95 segít a ritkább lassú események feltárásában. A FrontierHarness-dián a v1.0 nyers mezőjéből a sikeres futások mediánját mutatjuk.</p></aside>
+  <footer class="slide-footer"><span><a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/skills/frontierharness-eval/SKILL.md" target="_blank" rel="noopener noreferrer">FrontierHarness · Cost accounting</a></span><span>25 / 39</span></footer>
+</section>
+
+<section class="slide" id="paired" aria-labelledby="paired-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="paired-title" tabindex="-1">A párosított futás megmutatja, melyik feladat változott</h2>
+    <p class="lead">A és B ugyanazt a 20 feladatot háromszor próbálja. A párok ugyanahhoz a feladathoz és ismétléshez tartoznak, összesen 60 pár.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><div class="table-wrap"><table class="data-table" aria-label="Szemléltető A/B páros kimenetek"><thead><tr><th scope="col">60 pár</th><th scope="col">B pass</th><th scope="col">B fail</th></tr></thead><tbody><tr><td>A pass</td><td>30</td><td>6</td></tr><tr><td>A fail</td><td>12</td><td>12</td></tr></tbody></table></div><section class="card result"><h3>A nettó változás</h3><div class="formula">A: (30 + 6) / 60 = 60%</div><div class="formula">B: (30 + 12) / 60 = 70%</div><p class="small">B 12 esetben javít, 6-ban romlik. A különbség <b>+10 százalékpont</b>.</p></section></div><div class="callout ">A százalékpont két arány különbsége. A 70% − 60% különbség 10 százalékpont.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Az eredmény szintetikus. Az ismétlések ugyanahhoz a feladathoz tartoznak, ezért a bizonytalanság becslésénél érdemes feladatonként együtt tartani őket. A paired bootstrap feladatpárokat mintáz újra, és minden újramintázásnál kiszámolja a különbséget. A v1.1 élő FrontierHarness módszertan konfigurációnként és feladatonként négy értékelt kísérletet ír le.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a> &nbsp;·&nbsp; <a href="https://frontierharness.org/about/" target="_blank" rel="noopener noreferrer">FrontierHarness · Élő módszertan</a></span><span>26 / 39</span></footer>
+</section>
+
+<section class="slide" id="trace-meres" aria-labelledby="trace-meres-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="trace-meres-title" tabindex="-1">A trace megmutatja, hol fogyott el az idő</h2>
+    <p class="lead">A sikerráta az eredményt jelzi. A trace segít megérteni, milyen műveletekkel jutott el oda a harness.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Szemléltető trace-jel</th><th scope="col">Megfigyelés</th><th scope="col">Következő ellenőrizhető változtatás</th></tr></thead><tbody><tr><td>Sok ismételt read</td><td>Az agent többször nyitja meg ugyanazt a fájlt</td><td>Rövid fájltérkép a contextben</td></tr><tr><td>Nagy tool result</td><td>A 9 000 tokenes log kitölti a contextet</td><td>Rögzített, tömör tesztkivonat</td></tr><tr><td>Visszatérő timeout</td><td>Ugyanaz a parancs újra kifut az időből</td><td>Korlátozott tool timeout és értelmezhető hiba</td></tr></tbody></table></div><div class="callout ">A következő A/B körben egy változtatást próbálj ki, és újra mérd a minőséget, költséget és időt.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A fenti jelek hipotéziseket adnak. A nagy log és a hiba együttjárása önmagában kevés. Rögzített körülmények között a megváltoztatott tool result újrafuttatása mutatja meg, javul-e a saját feladatkészleten.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2610.00917v1" target="_blank" rel="noopener noreferrer">Li és mtsai. · Finding the Right Fit</a></span><span>27 / 39</span></footer>
+</section>
+
+<section class="slide" id="dontes" aria-labelledby="dontes-title">
+  <header class="slide-header">
+    <p class="eyebrow">04 / Mérés és döntés</p>
+    <h2 class="slide-title" id="dontes-title" tabindex="-1">Az üzemi követelmény ad értelmet a mérésnek</h2>
+    <p class="lead">A 60 páros attempt szemléltető példájában előre rögzítjük az elfogadási feltételt.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Beállítás</th><th scope="col">Pass</th><th scope="col">Pass rate</th><th scope="col">Ismert összköltség</th><th scope="col">Cost per pass</th></tr></thead><tbody><tr><td>A · baseline</td><td>36 / 60</td><td>60%</td><td>72 USD</td><td>72 / 36 = 2,00 USD</td></tr><tr class="highlight"><td>B · rövid feedback</td><td>42 / 60</td><td>70%</td><td>105 USD</td><td>105 / 42 = 2,50 USD</td></tr></tbody></table></div><div class="cols stretch"><section class="card tint"><h3>Példa a döntési szabályra</h3><p>Legalább 65% pass rate és legfeljebb 3 USD sikeres feladatonként.</p></section><section class="card signal"><h3>A két szám együtt</h3><p>B teljesíti mindkét küszöböt. A mérésben hat további sikerrel és 0,50 USD többlettel jár sikerenként.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A küszöbök kitaláltak, az A/B számok az előző páros táblából következnek. A saját cél lehet szigorúbb, például határidő, emberi review-idő vagy egy konkrét regressziós feltétel. Kis mintán a küszöbhöz közeli eredmény további próbákat igényelhet.</p></aside>
+  <footer class="slide-footer"><span></span><span>28 / 39</span></footer>
+</section>
+
+<section class="slide" id="frontierharness" aria-labelledby="frontierharness-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Valós benchmarkok</p>
+    <h2 class="slide-title compact-title" id="frontierharness-title" tabindex="-1">FrontierHarness v1.0 · három metrika, ugyanaz a modell</h2>
+    <p class="lead">Kimi K3, 30 rögzített feladat, 12 harness-konfiguráció. Egy attempt jutott minden task × konfiguráció párra.</p>
+  </header>
+  <div class="slide-body"><div class="cols wide-left">
+<section class="card frontier-figure" data-frontier>
+  <div class="choices script-only" aria-label="FrontierHarness ábra metrikája">
+    <button class="choice" data-metric="pass" aria-pressed="true" type="button">Pass rate</button>
+    <button class="choice" data-metric="cost" aria-pressed="false" type="button">Cost per pass</button>
+    <button class="choice" data-metric="time" aria-pressed="false" type="button">Median runtime</button>
+  </div>
+  <figure class="rows-chart" aria-label="FrontierHarness v1.0, 12 konfiguráció">
+    <div class="chart-axis" aria-hidden="true"><span></span><span data-axis-values><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></span><span></span></div>
+      <div class="chart-row" data-frontier-row data-config="codex" data-passes="20" data-total="30"
+           data-cost="3.4682963250" data-coverage="30" data-seconds="403">
+        <span>Codex</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar dark" style="width:66.66667%"></span></span>
+        <span class="chart-number"><strong data-value>66,7%</strong><small data-detail> · 20/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="dsh-creator" data-passes="19" data-total="30"
+           data-cost="3.2849026421" data-coverage="27" data-seconds="404">
+        <span>DSH Creator</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:63.33333%"></span></span>
+        <span class="chart-number"><strong data-value>63,3%</strong><small data-detail> · 19/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="claude-code" data-passes="19" data-total="30"
+           data-cost="18.3368339053" data-coverage="29" data-seconds="578">
+        <span>Claude Code</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar amber" style="width:63.33333%"></span></span>
+        <span class="chart-number"><strong data-value>63,3%</strong><small data-detail> · 19/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="pi-responses" data-passes="18" data-total="30"
+           data-cost="2.4329655000" data-coverage="30" data-seconds="453">
+        <span>Pi</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar dark" style="width:60.00000%"></span></span>
+        <span class="chart-number"><strong data-value>60,0%</strong><small data-detail> · 18/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="dsh-ptc" data-passes="18" data-total="30"
+           data-cost="4.5774473833" data-coverage="27" data-seconds="464">
+        <span>DSH PTC</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:60.00000%"></span></span>
+        <span class="chart-number"><strong data-value>60,0%</strong><small data-detail> · 18/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="dsh-standard" data-passes="18" data-total="30"
+           data-cost="3.4588863333" data-coverage="27" data-seconds="377">
+        <span>DSH Standard</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:60.00000%"></span></span>
+        <span class="chart-number"><strong data-value>60,0%</strong><small data-detail> · 18/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="oh-my-pi" data-passes="17" data-total="30"
+           data-cost="4.7455422353" data-coverage="30" data-seconds="406">
+        <span>Oh My Pi</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:56.66667%"></span></span>
+        <span class="chart-number"><strong data-value>56,7%</strong><small data-detail> · 17/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="kimi-code" data-passes="17" data-total="30"
+           data-cost="3.6470870647" data-coverage="30" data-seconds="476">
+        <span>Kimi Code</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:56.66667%"></span></span>
+        <span class="chart-number"><strong data-value>56,7%</strong><small data-detail> · 17/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="dsh-minimal" data-passes="17" data-total="30"
+           data-cost="4.7179556647" data-coverage="26" data-seconds="341">
+        <span>DSH Minimal</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:56.66667%"></span></span>
+        <span class="chart-number"><strong data-value>56,7%</strong><small data-detail> · 17/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="exo" data-passes="16" data-total="30"
+           data-cost="1.0451711062" data-coverage="30" data-seconds="377">
+        <span>Exo Harness</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:53.33333%"></span></span>
+        <span class="chart-number"><strong data-value>53,3%</strong><small data-detail> · 16/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="opencode" data-passes="15" data-total="30"
+           data-cost="3.2443455200" data-coverage="29" data-seconds="387">
+        <span>OpenCode</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:50.00000%"></span></span>
+        <span class="chart-number"><strong data-value>50,0%</strong><small data-detail> · 15/30</small></span>
+      </div>
+      <div class="chart-row" data-frontier-row data-config="hermes" data-passes="15" data-total="30"
+           data-cost="2.9043034800" data-coverage="28" data-seconds="418">
+        <span>Hermes</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:50.00000%"></span></span>
+        <span class="chart-number"><strong data-value>50,0%</strong><small data-detail> · 15/30</small></span>
+      </div>
+    <figcaption class="caption" data-frontier-caption aria-live="polite">Pass rate. A passok száma osztva a 30 értékelt attempttel.</figcaption>
+  </figure>
+</section><section class="card tint"><h3>Mi volt közös?</h3><p><b>Modell és környezet.</b> Kimi K3 a közös gateway-en. Visszaállított kiinduló környezet.</p><p><b>Feladatok.</b> 21 Terminal-Bench, 9 DeepSWE. Összesen 360 futás.</p><p class="small"><b>Cost per pass.</b> Ismert összköltség / passok. Az érték melletti hányados jelzi a költséglefedettséget.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A 30 feladatból 21 a Terminal-Bench, 9 a DeepSWE készletből származott. A 360 futásból 209 jutott passig. A model backend közös Kimi K3 volt a Fireworksnél, közös gateway-en keresztül. A futások ugyanabból a rögzített környezeti checkpointból indultak.</p><p>Az ábra a nyilvános v1.0 gépi eredményfájlt használja, a hivatkozás a commitot rögzíti. A cost per pass mező neve effective_cost_per_pass. Az összes ismert, normalizált költség osztva a sikeres futások számával. A forrás megjelenítő címkéjében medián szerepelhet. A runtime medián a sikeres futásokra vonatkozik. Például 20 és 19 pass között egyetlen feladatnyi különbség van.</p><p>A vizsgálat konfigurációkat hasonlít össze a közös gateway-en. A native párosítások más feltételeket és cache-viselkedést kaphatnak. A mérést 2026. szeptember 1-jén publikálták. A tesztelt kiadások közül Codex 0.148.0, Claude Code 2.1.237, Pi 0.84.2, DSH 0.1.0-rc.8.</p></aside>
+  <footer class="slide-footer"><span><a href="https://runta.com/blog/introducing-frontierharness-eval/" target="_blank" rel="noopener noreferrer">Runta · FrontierHarness v1.0</a> &nbsp;·&nbsp; <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/results/eval-data.json" target="_blank" rel="noopener noreferrer">FrontierHarness · Rögzített eredményfájl</a> &nbsp;·&nbsp; <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/skills/frontierharness-eval/SKILL.md" target="_blank" rel="noopener noreferrer">FrontierHarness · Cost accounting</a></span><span>29 / 39</span></footer>
+</section>
+
+<section class="slide" id="frontier-ertelmezes" aria-labelledby="frontier-ertelmezes-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Valós benchmarkok</p>
+    <h2 class="slide-title" id="frontier-ertelmezes-title" tabindex="-1">Azonos pass rate mellett is eltérhet a költség</h2>
+    <p class="lead">A FrontierHarness v1.0-ban a DSH Creator és a Claude Code vizsgált konfigurációja egyaránt 19 feladatot oldott meg a 30-ból.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Konfiguráció Kimi K3-mal</th><th scope="col">Pass</th><th scope="col">Ismert költségű futás</th><th scope="col">Cost per pass</th></tr></thead><tbody><tr><td>DSH Creator</td><td>19 / 30 · 63,3%</td><td>27 / 30</td><td>3,28 USD</td></tr><tr><td>Claude Code</td><td>19 / 30 · 63,3%</td><td>29 / 30</td><td>18,34 USD</td></tr></tbody></table></div><div class="cols stretch"><section class="card result"><h3>A megfigyelt arány</h3><div class="formula">18,34 / 3,28 ≈ <b>5,6×</b></div></section><section class="card tint"><h3>Mire vonatkozik?</h3><p>A közös Kimi K3 backend és a tesztelt gateway mellett mért két konfigurációra. A költségadatok lefedettsége is eltér.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Az azonos sikerszám nem bizonyítja, hogy ugyanaz a 19 feladat sikerült. Az ismert költség összege a hiányos futások miatt alsó becslés. A Runta szerzői az eltérés lehetséges tényezői között a cache és a gateway illeszkedését is megemlítik. Ebből az egy összevetésből ezeket a tényezőket nem lehet szétválasztani.</p></aside>
+  <footer class="slide-footer"><span><a href="https://runta.com/blog/introducing-frontierharness-eval/" target="_blank" rel="noopener noreferrer">Runta · FrontierHarness v1.0</a> &nbsp;·&nbsp; <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/results/eval-data.json" target="_blank" rel="noopener noreferrer">FrontierHarness · Rögzített eredményfájl</a> &nbsp;·&nbsp; <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/skills/frontierharness-eval/SKILL.md" target="_blank" rel="noopener noreferrer">FrontierHarness · Cost accounting</a></span><span>30 / 39</span></footer>
+</section>
+
+<section class="slide" id="yuj" aria-labelledby="yuj-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Valós benchmarkok</p>
+    <h2 class="slide-title" id="yuj-title" tabindex="-1">Yuj · ugyanaz a modell, más context policy</h2>
+    <p class="lead">Qwen3.6-35B-A3B, 169 párosított SWE-bench Verified feladat, 20 480 tokenes context window és 480 másodperces keret.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Teljes megoldások aránya</h3><figure class="rows-chart" aria-label="Teljes megoldások aránya Yuj control és treatment esetén"><div class="chart-row"><span>Control</span><span class="chart-track" aria-hidden="true"><span class="chart-bar dark" style="width:25.4438%"></span></span><span class="chart-number">25,4%</span></div><div class="chart-row"><span>Treatment</span><span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:42.6036%"></span></span><span class="chart-number">42,6%</span></div><figcaption class="caption">Skála 0–100%. A számláló 43, illetve 72 teljes megoldás. Mindkét nevező 169.</figcaption></figure><p class="small"><b>+17,2 százalékpont.</b> A szerző párosított 95%-os intervalluma +10,7 és +23,7 pont közé esik.</p></section><section class="card signal"><h3>Mi változott a treatmentben?</h3><p>A harness rövidítette a régebbi tool resultokat, és szabály alapján visszajelzést adott az ismétlődő elakadásokról.</p><p class="small">Az eredmény a teljes változtatáscsomaghoz tartozik. A treatment több tényleges modellmunkát végzett a szűk ablakban.</p></section></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A control és a treatment ugyanazt a model servinget és taskokat használta az egyes párokon. Az eredeti 187 feladatból 169-hez volt a fix időkeretben mindkét ágon teljes kimenet. A 43/169 és a 72/169 különbsége 29/169, azaz 17,16 százalékpont. Az intervallum az eredeti tanulmány task-paired bootstrap eredménye.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a></span><span>31 / 39</span></footer>
+</section>
+
+<section class="slide" id="context-hatas" aria-labelledby="context-hatas-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Valós benchmarkok</p>
+    <h2 class="slide-title" id="context-hatas-title" tabindex="-1">A context policy nyeresége a feltételektől függ</h2>
+    <p class="lead">Ugyanez a Yuj-tanulmány a 169 közös feladaton három context window beállítást is közöl. Minden sor külön control–treatment pár.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Context window</th><th scope="col">Control → treatment</th><th scope="col">Teljes megoldások arányának változása</th><th scope="col">95%-os intervallum</th></tr></thead><tbody><tr class="highlight"><td>20 480 token</td><td>43 → 72</td><td>+17,2 százalékpont</td><td>+10,7 … +23,7</td></tr><tr><td>43 008 token</td><td>76 → 87</td><td>+6,5 százalékpont</td><td>+0,6 … +13,0</td></tr><tr><td>262 144 token</td><td>102 → 101</td><td>−0,6 százalékpont</td><td>−5,9 … +4,7</td></tr></tbody></table></div><div class="callout ">A szűk ablakban volt a legnagyobb megfigyelt eltérés. A széles ablaknál a becsült tartomány mindkét irányt megengedi.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Forrás: 6. és 7. táblázat. A széles ablak értékei a közös feladatokra utólag levetített eredmények. A három kampány eltérő időpontban futott, így az ablakméret önálló ok-okozati hatása a sorokból nem azonosítható.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a></span><span>32 / 39</span></footer>
+</section>
+
+<section class="slide" id="model-harness-fit" aria-labelledby="model-harness-fit-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Valós benchmarkok</p>
+    <h2 class="slide-title compact-title" id="model-harness-fit-title" tabindex="-1">A model × harness interakció megfordíthatja a sorrendet</h2>
+    <p class="lead">Li és mtsai. két kiemelt harness-konfigurációja a Terminal-Bench 4 ugyanazon 63 feladatán. Mindkét ábrán 0–100% a skála.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>OpenHands</h3><figure class="rows-chart" aria-label="OpenHands pass rate"><div class="chart-row"><span>Claude Opus 5</span><span class="chart-track" aria-hidden="true"><span class="chart-bar dark" style="width:57.1429%"></span></span><span class="chart-number">57,14%</span></div><div class="chart-row"><span>GPT-6 Astra</span><span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:49.2063%"></span></span><span class="chart-number">49,21%</span></div><figcaption class="caption">Azonos nevező: 63. Passok: 36 és 31.</figcaption></figure><p class="small"><b>Claude +7,94 százalékpont.</b></p></section><section class="card signal"><h3>Pi</h3><figure class="rows-chart" aria-label="Pi pass rate"><div class="chart-row"><span>Claude Opus 5</span><span class="chart-track" aria-hidden="true"><span class="chart-bar dark" style="width:30.1587%"></span></span><span class="chart-number">30,16%</span></div><div class="chart-row"><span>GPT-6 Astra</span><span class="chart-track" aria-hidden="true"><span class="chart-bar " style="width:60.3175%"></span></span><span class="chart-number">60,32%</span></div><figcaption class="caption">Azonos nevező: 63. Passok: 19 és 38.</figcaption></figure><p class="small"><b>GPT +30,16 százalékpont.</b></p></section></div><div class="callout ">Interakcióról beszélünk, ha egy modell előnye a harness választásával változik. Ebben a mérésben a sorrend is megfordul.</div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A dolgozat a Terminal-Bench 4 nem H100-at igénylő 63 feladatát használta. Itt a szerzők táblázatából két harness és két modell szerepel. A tanulmány a harness saját context managementjét megtartotta, és high reasoning effortot alkalmazott. A teljes táblázat a dolgozat 4.1. szakaszában olvasható.</p></aside>
+  <footer class="slide-footer"><span><a href="https://arxiv.org/html/2610.00917v1" target="_blank" rel="noopener noreferrer">Li és mtsai. · Finding the Right Fit</a></span><span>33 / 39</span></footer>
+</section>
+
+<section class="slide" id="benchmark-kerdesek" aria-labelledby="benchmark-kerdesek-title">
+  <header class="slide-header">
+    <p class="eyebrow">05 / Valós benchmarkok</p>
+    <h2 class="slide-title" id="benchmark-kerdesek-title" tabindex="-1">A mérési elrendezés meghatározza a választ</h2>
+    <p class="lead">Az eredményhez mindig olvasd hozzá a kérdést, a változtatást és a mért egységet.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Mérés</th><th scope="col">Mi változott?</th><th scope="col">Mire ad példát?</th></tr></thead><tbody><tr><td>FrontierHarness v1.0</td><td>Kész harness-konfigurációk ugyanazon a backenden</td><td>Pass rate, idő és költség a tesztelt beállításokban</td></tr><tr><td>Yuj · Lewis</td><td>Egy harnessen belüli context- és recovery-csomag</td><td>Egy rögzített konfigurációváltoztatás páros hatása</td></tr><tr><td>Finding the Right Fit</td><td>Több modell és több harness párosítása</td><td>A modell és a harness közötti interakció</td></tr><tr><td>Harness-Bench v2</td><td>Offline workflow-k és több modell–harness konfiguráció</td><td>A trace, a futás és a végső artifact együttes vizsgálata</td></tr></tbody></table></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A Harness-Bench v2 106 sandboxolt offline feladatot és 5 194 futási trajectoryt közöl. A trajectory a teljes eseménysor. A három előző dia számai külön-külön értelmezhetők, mert a feladatok, a scoring és a futtatás feltételei eltérnek.</p></aside>
+  <footer class="slide-footer"><span><a href="https://runta.com/blog/introducing-frontierharness-eval/" target="_blank" rel="noopener noreferrer">Runta · FrontierHarness v1.0</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Lewis · Same Model, Different Harness</a> &nbsp;·&nbsp; <a href="https://arxiv.org/html/2610.00917v1" target="_blank" rel="noopener noreferrer">Li és mtsai. · Finding the Right Fit</a> &nbsp;·&nbsp; <a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Yao és mtsai. · Harness-Bench v2</a></span><span>34 / 39</span></footer>
+</section>
+
+<section class="slide" id="feladat-koltseg" aria-labelledby="feladat-koltseg-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="feladat-koltseg-title" tabindex="-1">Feladat 1 · Mit választanál a költségkerethez?</h2>
+    <p class="lead">A és B ugyanazon a tíz feladaton futott. Minden futás költsége ismert. A cél legalább 85% pass rate.</p>
+  </header>
+  <div class="slide-body"><div class="table-wrap"><table class="data-table"><thead><tr><th scope="col">Beállítás</th><th scope="col">Passok</th><th scope="col">Összköltség</th></tr></thead><tbody><tr><td>A</td><td>9 / 10</td><td>45 USD</td></tr><tr><td>B</td><td>8 / 10</td><td>24 USD</td></tr></tbody></table></div><details class="reveal"><summary>Megoldás</summary><p><b>A</b> pass rate-je 90%, cost per pass értéke 45 / 9 = 5 USD. <b>B</b> pass rate-je 80%, cost per pass értéke 24 / 8 = 3 USD. A 85%-os küszöböt A éri el.</p></details></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Ha a sikerre jutó költségnek 4 USD alatti korlátja is lenne, ebben a kismintás példában egyik beállítás sem teljesítené mindkét feltételt.</p></aside>
+  <footer class="slide-footer"><span></span><span>35 / 39</span></footer>
+</section>
+
+<section class="slide" id="feladat-trace" aria-labelledby="feladat-trace-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="feladat-trace-title" tabindex="-1">Feladat 2 · Mi lenne az egyetlen változtatásod?</h2>
+    <p class="lead">A saját CSV-agent 3 próbálkozásból kétszer ugyanazt a hosszú logot kapja, és ismét a hibás sort írja. Tervezd meg a következő összevetést.</p>
+  </header>
+  <div class="slide-body"><div class="cols stretch"><section class="card tint"><h3>Milyen jel látszik?</h3><p>A teszt a quoted_name esetet buktatja. A hiba egy több ezer tokenes log végén van.</p></section><section class="card signal"><h3>Mit rögzítenél?</h3><p>A modell, a taskok, a budget és a verifier maradjon közös a két ágon.</p></section></div><details class="reveal"><summary>Megoldás</summary><p>Az egyik ágon add vissza a teljes logot, a másikon a <code>quoted_name</code> tesztet az elvárt és a tényleges mezőszámmal. Ismételd párosítva, és mérd a pass rate-et, a költséget és az eltelt időt.</p></details></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>Ez egy kísérleti hipotézis. A rövidített feedback akár fontos részletet is elrejthet, ezért a teljes log visszakereshető maradhat, és a két ágon ugyanazzal az ellenőrző készlettel mérünk.</p></aside>
+  <footer class="slide-footer"><span></span><span>36 / 39</span></footer>
+</section>
+
+<section class="slide" id="feladat-adat" aria-labelledby="feladat-adat-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="feladat-adat-title" tabindex="-1">Feladat 3 · Olvasd le a FrontierHarness ábrát</h2>
+    <p class="lead">Válts cost per pass nézetre, és nézd meg a Claude Code és a DSH Creator sávját. Mit kell közölni a két dollárérték mellé?</p>
+  </header>
+  <div class="slide-body"><div class="callout ">A <a href="#frontierharness">FrontierHarness ábrán</a> a dollárérték melletti hányados segít.</div><details class="reveal"><summary>Megoldás</summary><p>Mindkettő 19 / 30 pass. A közös Kimi K3 setupban a költségadat 29 / 30, illetve 27 / 30 futásnál ismert. A cost per pass az ismert összköltség osztva 19-cel. Az 5,6× a megfigyelt költségmutatók aránya ebben a mérésben.</p></details></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A cost per pass mezőt a gépi adatokból reprodukáltuk. A coverage is az adatfájl része. Az ábrán a sávok közös nullpontról indulnak.</p></aside>
+  <footer class="slide-footer"><span><a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/results/eval-data.json" target="_blank" rel="noopener noreferrer">FrontierHarness · Rögzített eredményfájl</a></span><span>37 / 39</span></footer>
+</section>
+
+<section class="slide" id="forrasok-eszkozok" aria-labelledby="forrasok-eszkozok-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="forrasok-eszkozok-title" tabindex="-1">Források · a harness felépítése</h2>
+    <p class="lead">Ezekben a leírásokban konkrétan nyomon követhető a context, az agent loop, a tool és az ellenőrzés.</p>
+  </header>
+  <div class="slide-body"><div class="sources"><div class="source-row"><div><a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">Claude Code · Agent loop</a> · <a href="https://code.claude.com/docs/en/hooks" target="_blank" rel="noopener noreferrer">Hooks</a></div><p>Műveletek, kontextuskezelés és a tool eseményeire kapcsolt automatizmusok.</p></div><div class="source-row"><div><a href="https://learn.chatgpt.com/docs/codex/cli" target="_blank" rel="noopener noreferrer">Codex CLI</a> · <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md" target="_blank" rel="noopener noreferrer">AGENTS.md</a> · <a href="https://learn.chatgpt.com/docs/agent-approvals-security" target="_blank" rel="noopener noreferrer">Approvals</a></div><p>Projektutasítások, terminálos műveletek és futtatási határok.</p></div><div class="source-row"><div><a href="https://pi.dev/docs/latest/cli" target="_blank" rel="noopener noreferrer">Pi CLI</a> · <a href="https://pi.dev/docs/latest/extensions" target="_blank" rel="noopener noreferrer">Extensions</a> · <a href="https://pi.dev/docs/latest/sdk" target="_blank" rel="noopener noreferrer">SDK</a></div><p>Alaptoolok, új toolok regisztrálása és a harness beágyazása.</p></div><div class="source-row"><div><a href="https://openai.com/index/harness-engineering/" target="_blank" rel="noopener noreferrer">OpenAI · Harness engineering</a> · <a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer">Anthropic · Long-running agents</a></div><p>Repository és feedback loop, illetve ellenőrizhető haladás több sessionön át.</p></div></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A termékleírások a 2026. november 12-én ellenőrzött hivatalos oldalakra mutatnak. A benchmarkok verziói külön szerepelnek az adatok mellett.</p></aside>
+  <footer class="slide-footer"><span></span><span>38 / 39</span></footer>
+</section>
+
+<section class="slide" id="forrasok-meres" aria-labelledby="forrasok-meres-title">
+  <header class="slide-header">
+    <p class="eyebrow">06 / Gyakorlás és források</p>
+    <h2 class="slide-title" id="forrasok-meres-title" tabindex="-1">Források · a mérések reprodukálása</h2>
+    <p class="lead">A publikált módszer, a nevező és a nyers adatok együtt segítenek ellenőrizni az ábrát.</p>
+  </header>
+  <div class="slide-body"><div class="sources"><div class="source-row"><div><a href="https://runta.com/blog/introducing-frontierharness-eval/" target="_blank" rel="noopener noreferrer">FrontierHarness v1.0</a> · <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/results/eval-data.json" target="_blank" rel="noopener noreferrer">Rögzített adatok</a> · <a href="https://github.com/frontier-harness-eval/eval/blob/e837a70bd6beb4e72eeeda62dd06e3bd34f6cb63/skills/frontierharness-eval/SKILL.md" target="_blank" rel="noopener noreferrer">Mutatók</a></div><p>30 feladat és 12 konfiguráció. A cost per pass mező és a cost coverage számítása.</p></div><div class="source-row"><div><a href="https://frontierharness.org/about/" target="_blank" rel="noopener noreferrer">FrontierHarness · Élő módszertan</a></div><p>Több modell és ismételt attempt. A diák v1.0 ábrája egy rögzített korábbi futássorozat.</p></div><div class="source-row"><div><a href="https://arxiv.org/html/2608.26218v1" target="_blank" rel="noopener noreferrer">Same Model, Different Harness</a></div><p>A 6–8. táblázatban a páros eredmények, a mintanagyság és a context window hatása.</p></div><div class="source-row"><div><a href="https://arxiv.org/html/2610.00917v1" target="_blank" rel="noopener noreferrer">Finding the Right Fit</a></div><p>A 4.1. szakaszban a Terminal-Bench 4 model × harness táblázata.</p></div><div class="source-row"><div><a href="https://arxiv.org/abs/2605.27922v2" target="_blank" rel="noopener noreferrer">Harness-Bench</a> · <a href="https://arxiv.org/abs/2601.11868" target="_blank" rel="noopener noreferrer">Terminal-Bench</a></div><p>Feladat, környezet, verifier és trace a benchmarkokban.</p></div></div></div>
+  <aside class="speaker-notes"><h3>Részletes magyarázat</h3><p>A FrontierHarness ábra saját megjelenítés a commitra rögzített adatokból. A két kutatási ábra a közölt táblázatokból számolja újra a százalékokat. A szintetikus CSV- és A/B-példák a mérési képletekhez készültek.</p></aside>
+  <footer class="slide-footer"><span></span><span>39 / 39</span></footer>
+</section></main>
+<nav class="nav" aria-label="Diák lapozása">
+  <div class="nav-actions">
+    <button class="control" type="button" id="previous">← Előző</button>
+    <button class="control primary" type="button" id="next">Következő →</button>
+  </div>
+  <div class="progress" aria-hidden="true"><div id="progress-fill"></div></div>
+  <p class="counter" id="counter" aria-live="polite"></p>
+</nav>
+<p class="keyboard-help script-only">Lapozás a nyilakkal · Home az első, End az utolsó diára ugrik</p>
+<dialog class="dialog" id="contents-dialog" aria-labelledby="contents-title">
+  <header class="dialog-head"><h2 id="contents-title">Tartalom</h2><form method="dialog"><button class="control">Bezárás</button></form></header>
+  <div class="dialog-body"><section class="toc-section"><h3>Kezdés</h3><ol><li><a href="#kezdes"><span>01</span>Harness engineering</a></li><li><a href="#utvonal"><span>02</span>Egy CSV-feladattól a benchmarkig</a></li></ol></section><section class="toc-section"><h3>A modell körüli rendszer</h3><ol><li><a href="#harness-def"><span>03</span>Mi a harness?</a></li><li><a href="#csv-spec"><span>04</span>A példa feladata egy új CSV-oszlop</a></li><li><a href="#agent-loop"><span>05</span>Az agent loop egy döntést és egy visszajelzést ismétel</a></li><li><a href="#tool-contract"><span>06</span>Egy tool contract megmondja, mi jön vissza</a></li><li><a href="#trace"><span>07</span>Kövesd végig a CSV-javítás trace-ét</a></li><li><a href="#context"><span>08</span>A context policy választja ki, mit lásson a modell</a></li><li><a href="#hatarok"><span>09</span>A sandbox és az approval más döntést kezel</a></li><li><a href="#verification"><span>10</span>A verification a módosított programot vizsgálja</a></li><li><a href="#repo-kornyezet"><span>11</span>A repository is megtervezhető az agent munkájához</a></li></ol></section><section class="toc-section"><h3>Claude Code, Codex és Pi</h3><ol><li><a href="#dobozos"><span>12</span>Mit kapsz egy dobozos coding harnessben?</a></li><li><a href="#claude-code"><span>13</span>Claude Code · context, action, verification</a></li><li><a href="#codex"><span>14</span>Codex · repository, eszközök és futtatási határok</a></li><li><a href="#pi"><span>15</span>Pi · kis alap eszközkészlet és extensions</a></li></ol></section><section class="toc-section"><h3>Custom harness</h3><ol><li><a href="#custom"><span>16</span>A custom harnessben te határozod meg a futtatást</a></li><li><a href="#custom-terv"><span>17</span>Négy tool és egy ellenőrzési feltétel</a></li><li><a href="#custom-loop"><span>18</span>Egy saját loopban a budget és a stop is szabály</a></li><li><a href="#recovery"><span>19</span>Recovery · külön út a teszthibára és az infrastruktúrahibára</a></li><li><a href="#session"><span>20</span>A session állapota megőrzi, meddig jutott a munka</a></li></ol></section><section class="toc-section"><h3>Mérés és döntés</h3><ol><li><a href="#eval-harness"><span>21</span>Az eval harness megismételhetővé teszi a mérést</a></li><li><a href="#ab-test"><span>22</span>A/B mérés · melyik beállítást változtatjuk?</a></li><li><a href="#pass-rate"><span>23</span>A pass rate nevezője az értékelt attempt</a></li><li><a href="#cost-per-pass"><span>24</span>Mennyibe kerül egy sikeres feladat?</a></li><li><a href="#runtime"><span>25</span>A p50 és a p95 más futásélményt mutat</a></li><li><a href="#paired"><span>26</span>A párosított futás megmutatja, melyik feladat változott</a></li><li><a href="#trace-meres"><span>27</span>A trace megmutatja, hol fogyott el az idő</a></li><li><a href="#dontes"><span>28</span>Az üzemi követelmény ad értelmet a mérésnek</a></li></ol></section><section class="toc-section"><h3>Valós benchmarkok</h3><ol><li><a href="#frontierharness"><span>29</span>FrontierHarness v1.0 · három metrika, ugyanaz a modell</a></li><li><a href="#frontier-ertelmezes"><span>30</span>Azonos pass rate mellett is eltérhet a költség</a></li><li><a href="#yuj"><span>31</span>Yuj · ugyanaz a modell, más context policy</a></li><li><a href="#context-hatas"><span>32</span>A context policy nyeresége a feltételektől függ</a></li><li><a href="#model-harness-fit"><span>33</span>A model × harness interakció megfordíthatja a sorrendet</a></li><li><a href="#benchmark-kerdesek"><span>34</span>A mérési elrendezés meghatározza a választ</a></li></ol></section><section class="toc-section"><h3>Gyakorlás és források</h3><ol><li><a href="#feladat-koltseg"><span>35</span>Feladat 1 · Mit választanál a költségkerethez?</a></li><li><a href="#feladat-trace"><span>36</span>Feladat 2 · Mi lenne az egyetlen változtatásod?</a></li><li><a href="#feladat-adat"><span>37</span>Feladat 3 · Olvasd le a FrontierHarness ábrát</a></li><li><a href="#forrasok-eszkozok"><span>38</span>Források · a harness felépítése</a></li><li><a href="#forrasok-meres"><span>39</span>Források · a mérések reprodukálása</a></li></ol></section></div>
+</dialog>
+<dialog class="dialog" id="notes-dialog" aria-labelledby="notes-title">
+  <header class="dialog-head"><h2 id="notes-title">Részletes magyarázat</h2><form method="dialog"><button class="control">Bezárás</button></form></header>
+  <div class="dialog-body" id="notes-content"></div>
+</dialog>
+<script>(() => {
+  'use strict';
+
+  const slides = Array.from(document.querySelectorAll('.stage > .slide'));
+  const indexById = new Map(slides.map((slide, index) => [slide.id, index]));
+  const toc = document.getElementById('contents-dialog');
+  const notes = document.getElementById('notes-dialog');
+  const openNotes = document.getElementById('open-notes');
+  const previous = document.getElementById('previous');
+  const next = document.getElementById('next');
+  const progress = document.getElementById('progress-fill');
+  const counter = document.getElementById('counter');
+  const fullscreen = document.getElementById('fullscreen');
+  let active = 0;
+
+  function show(index, { record = true, focus = false } = {}) {
+    if (!Number.isInteger(index) || index < 0 || index >= slides.length) return;
+    slides[active].classList.remove('active');
+    active = index;
+    const slide = slides[active];
+    slide.classList.add('active');
+    slide.scrollTop = 0;
+    if (window.scrollY > 0) window.scrollTo(0, 0);
+    const hash = '#' + slide.id;
+    if (record && location.hash !== hash) history.pushState(null, '', hash);
+    previous.disabled = active === 0;
+    next.disabled = active === slides.length - 1;
+    openNotes.disabled = !slide.querySelector('.speaker-notes');
+    counter.textContent = (active + 1) + ' / ' + slides.length;
+    progress.style.width = (100 * (active + 1) / slides.length) + '%';
+    toc.querySelector('[aria-current]')?.removeAttribute('aria-current');
+    toc.querySelector('a[href="' + hash + '"]')?.setAttribute('aria-current', 'page');
+    if (focus) slide.querySelector('.slide-title').focus({ preventScroll: true });
+  }
+
+  function followHash() {
+    show(indexById.get(location.hash.slice(1)) ?? 0, { record: false });
+  }
+
+  document.documentElement.classList.add('enhanced');
+  followHash();
+  window.addEventListener('popstate', followHash);
+  window.addEventListener('hashchange', () => {
+    if (indexById.has(location.hash.slice(1))) followHash();
+  });
+  previous.addEventListener('click', () => show(active - 1));
+  next.addEventListener('click', () => show(active + 1));
+
+  document.addEventListener('click', event => {
+    const anchor = event.target.closest('a[href^="#"]');
+    if (!anchor || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const target = indexById.get(anchor.hash.slice(1));
+    if (target === undefined) return;
+    event.preventDefault();
+    if (toc.open) toc.close();
+    show(target, { focus: true });
+  });
+
+  document.getElementById('open-toc').addEventListener('click', () => {
+    toc.showModal();
+    toc.querySelector('[aria-current]')?.scrollIntoView({ block: 'center' });
+  });
+
+  openNotes.addEventListener('click', () => {
+    const slide = slides[active];
+    const source = slide.querySelector('.speaker-notes');
+    if (!source) return;
+    document.getElementById('notes-title').textContent = 'Részletes magyarázat · ' +
+      slide.querySelector('.slide-title').textContent;
+    document.getElementById('notes-content').replaceChildren(
+      ...Array.from(source.children).slice(1).map(node => node.cloneNode(true))
+    );
+    notes.showModal();
+    notes.scrollTop = 0;
+  });
+
+  if (/^https?:$/.test(location.protocol) && /\/Courses\/harness-engineering\/(?:index\.html)?$/.test(location.pathname)) {
+    document.getElementById('catalog-link').hidden = false;
+  }
+
+  if (!document.fullscreenEnabled) fullscreen.hidden = true;
+  fullscreen.addEventListener('click', async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      fullscreen.hidden = true;
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const enabled = Boolean(document.fullscreenElement);
+    fullscreen.setAttribute('aria-pressed', String(enabled));
+    fullscreen.textContent = enabled ? 'Kilépés a teljes képernyőből' : 'Teljes képernyő';
+  });
+
+  document.addEventListener('keydown', event => {
+    if (toc.open || notes.open || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.target.closest('input, textarea, select, summary, [contenteditable="true"]')) return;
+    const destinations = {
+      ArrowRight: active + 1, PageDown: active + 1,
+      ArrowLeft: active - 1, PageUp: active - 1,
+      Home: 0, End: slides.length - 1,
+    };
+    if (!Object.hasOwn(destinations, event.key)) return;
+    event.preventDefault();
+    show(destinations[event.key], { focus: true });
+  });
+
+  const trace = document.querySelector('[data-trace]');
+  const traceButtons = Array.from(trace.querySelectorAll('[data-trace-button]'));
+  const traceStates = Array.from(trace.querySelectorAll('[data-trace-state]'));
+
+  function showTrace(index) {
+    traceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
+    traceStates.forEach((record, i) => { record.hidden = i !== index; });
+  }
+  traceButtons.forEach((button, index) => button.addEventListener('click', () => showTrace(index)));
+  showTrace(0);
+
+  const figure = document.querySelector('[data-frontier]');
+  const metricButtons = Array.from(figure.querySelectorAll('[data-metric]'));
+  const rows = Array.from(figure.querySelectorAll('[data-frontier-row]'));
+  const oneDecimal = new Intl.NumberFormat('hu-HU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const twoDecimals = new Intl.NumberFormat('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const metricSpecs = {
+    pass: {
+      axis: ['0%', '25%', '50%', '75%', '100%'],
+      describe: 'Pass rate. A passok száma osztva a 30 értékelt attempttel.',
+      read: data => {
+        const ratio = 100 * data.passes / data.total;
+        return { width: ratio, value: oneDecimal.format(ratio) + '%', detail: data.passes + '/' + data.total };
+      },
+    },
+    cost: {
+      axis: ['0', '5', '10', '15', '20 USD'],
+      describe: 'Cost per pass. Ismert összköltség osztva a passokkal. A tört a költségadatok lefedettsége.',
+      read: data => ({ width: 100 * data.cost / 20, value: twoDecimals.format(data.cost) + ' USD', detail: data.coverage + '/' + data.total }),
+    },
+    time: {
+      axis: ['0', '2,5', '5', '7,5', '10 perc'],
+      describe: 'Median runtime. A sikeres attemptök medián ideje perc:másodperc formában.',
+      read: data => ({
+        width: 100 * data.seconds / 600,
+        value: Math.floor(data.seconds / 60) + ':' + String(data.seconds % 60).padStart(2, '0'),
+        detail: '',
+      }),
+    },
+  };
+
+  function setMetric(key) {
+    const spec = metricSpecs[key];
+    metricButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.metric === key)));
+    figure.querySelector('[data-axis-values]').replaceChildren(...spec.axis.map(label => {
+      const tick = document.createElement('span');
+      tick.textContent = label;
+      return tick;
+    }));
+    rows.forEach(row => {
+      const metric = spec.read(row.dataset);
+      row.querySelector('.chart-bar').style.width = metric.width + '%';
+      row.querySelector('[data-value]').textContent = metric.value;
+      row.querySelector('[data-detail]').textContent = metric.detail ? ' · ' + metric.detail : '';
+    });
+    figure.querySelector('[data-frontier-caption]').textContent = spec.describe;
+  }
+  metricButtons.forEach(button => button.addEventListener('click', () => setMetric(button.dataset.metric)));
+})();
+</script>
+</body>
+</html>

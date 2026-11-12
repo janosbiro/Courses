@@ -17,6 +17,7 @@ h1 { font: 600 clamp(3rem, 8.5vw, 6.7rem)/.98 var(--serif); letter-spacing: -.03
 .hero p { color: #dbe6ec; margin-top: .65rem; font-size: clamp(1.05rem, 2.4vw, 1.35rem); }
 main.wrap { padding: clamp(1.4rem, 4vw, 3.1rem) 0 3rem; }
 .course { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(13rem, .72fr); gap: 1.6rem; align-items: center; background: #e7eef4; border: 1px solid #b9c9d8; border-left: 5px solid var(--teal); border-radius: 4px; padding: clamp(1.2rem, 3.2vw, 2.25rem); }
+.course + .course { margin-top: 1.15rem; }
 .course h2 { font: 650 clamp(1.85rem, 4.5vw, 3.2rem)/1.04 var(--serif); letter-spacing: -.018em; }
 .course p { max-width: 36rem; margin: .6rem 0 1.15rem; color: var(--muted); font-size: 1.05rem; }
 .open { display: inline-flex; gap: .45em; align-items: center; background: var(--navy); color: white; padding: .56rem .88rem; border-radius: 4px; text-decoration: none; font-weight: 630; }
@@ -50,6 +51,18 @@ dd { font-weight: 650; text-align: right; }
       <div><dt>Nyelv</dt><dd>magyar</dd></div>
       <div><dt>Teljes anyag</dt><dd>73 dia</dd></div>
       <div><dt>Alapút</dt><dd>48 dia</dd></div>
+    </dl>
+  </article>
+  <article class="course">
+    <div>
+      <h2>Harness engineering</h2>
+      <p>Mit tesz a harness a coding agent körül? Claude Code, Codex, Pi, custom harness és három publikált mérés.</p>
+      <a class="open" href="./harness-engineering/">Tananyag megnyitása <span aria-hidden="true">→</span></a>
+    </div>
+    <dl>
+      <div><dt>Nyelv</dt><dd>magyar</dd></div>
+      <div><dt>Terjedelem</dt><dd>39 dia</dd></div>
+      <div><dt>Gyakorlás</dt><dd>Interaktív ábra és feladatok</dd></div>
     </dl>
   </article>
 </main>
